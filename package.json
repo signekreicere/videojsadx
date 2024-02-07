@@ -1,0 +1,55 @@
+{
+  "name": "videojsadx",
+  "version": "1.0.0",
+  "description": "Adx ads integration for VideoJS",
+  "main": "lib/videojsadx.js",
+  "scripts": {
+    "dev": "webpack --mode development",
+    "build": "webpack --mode production",
+    "start": "webpack serve --open 'Chrome'"
+  },
+  "browserslist": [
+    "> 0.25%",
+    "not IE 11",
+    "not op_mini all"
+  ],
+  "keywords": [
+    "videojs",
+    "videojs-plugin",
+    "adx"
+  ],
+  "author": "SIA Setupad, Signe Kreicere <signe.kreicere@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "video.js": "^8",
+    "videojs-ima": "^2.3.0",
+    "videojs-contrib-ads": "^7.0.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.0.0",
+    "@babel/core": "^7.23.9",
+    "@babel/preset-env": "^7.23.9",
+    "@babel/preset-react": "^7.18.6",
+    "babel-loader": "^8.3.0",
+    "css-loader": "^6.10.0",
+    "sass-loader": "^14.1.0",
+    "node-sass": "^9.0.0",
+    "style-loader": "^3.3.4",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^4.10.0",
+    "webpack-dev-server": "^4.15.1"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/signekreicere/videojsadx.git"
+  },
+  "bugs": {
+    "url": "https://github.com/signekreicere/videojsadx/issues"
+  },
+  "homepage": "https://github.com/signekreicere/videojsadx#readme"
+}
