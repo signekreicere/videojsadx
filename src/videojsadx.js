@@ -1,3 +1,9 @@
+/*
+ * ISC License
+ *
+ * Copyright (c) 2024, Signe Kreicere
+ */
+
 import 'video.js/dist/video-js.css';
 import 'videojs-contrib-ads/dist/videojs.ads.css';
 import 'videojs-ima/dist/videojs.ima.css';
@@ -60,6 +66,13 @@ import 'videojs-ima';
             let adBreakActive = false;
             let initialized = false;
             let playlistItemClicked = false;
+            // replacing [placeholder] with page URL or adding page URL
+            if (adUnit.includes("[placeholder]")) {
+                adUnit = adUnit.replace("[placeholder]", encodedPageUrl);
+            } else {
+                adUnit += "&description_url=" + encodedPageUrl;
+            }
+            if (debug) {console.log("Adunit url: " + adUnit);};
 
             // Defining elements
             let videoElementContainer;
@@ -115,7 +128,7 @@ import 'videojs-ima';
                             </div>
                         </div>`;
                     }
-                    
+
                     videoContainer.innerHTML = htmlContent;
 
                     // Defining elements (giving actual values)
