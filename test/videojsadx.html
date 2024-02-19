@@ -7,7 +7,7 @@
 
   <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
   <!-- won't be updated. check latest version -->
-  <script src="https://cdn.jsdelivr.net/npm/videojsadx@1.1.0/dist/videojsadx.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/videojsadx@1.1.2/dist/videojsadx.js"></script>
 
 </head>
 <body>
@@ -20,15 +20,15 @@
       return window.stpdVideo.setConfig({
         videoSrc: 'https://www.w3schools.com/html/mov_bbb.mp4',
         initialAutoplay: false,
-        thumbnails: [
+        playlist: [
           { videoSrc: 'https://www.w3schools.com/html/mov_bbb.mp4', thumbnailSrc: 'https://signe.stpd.io/wp-content/uploads/2023/12/mov_bbb.png' },
           { videoSrc: 'https://storage.googleapis.com/gvabox/media/samples/android.mp4', thumbnailSrc: 'https://signe.stpd.io/wp-content/uploads/2023/12/android.jpg' }
         ],
         miniPlayer: [
-          { showOnlyOnAds: false, width: 400, position: 'br', spacing: [50, 50] }
+          { showOnlyOnAds: false, width: '400px', position: 'br', spacing: ['50px', '50px'] }
         ],
         miniPlayerMobile: [
-          { showOnlyOnAds: false, width: 300, position: 'b', spacing: 100 }
+          { showOnlyOnAds: false, width: '60%', position: 'bl', spacing: ['100px', '50%'] }
         ],
         adUnit: 'http://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=xml_vmap1&unviewed_position_start=1&cust_params=sample_ar%3Dpremidpostpod%26deployment%3Dgmf-js&cmsid=496&vid=short_onecue&correlator=',
         debug: true

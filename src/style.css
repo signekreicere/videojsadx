@@ -74,12 +74,10 @@
     z-index: 99999;
     top: 0;
     left: 0;
+    width: 20%;
 }
 .stpdLogo img{
-    height: 30px;
-}
-.stpd-video-fixed .stpdLogo img{
-    height: 20px;
+    width: 100%;
 }
 
 /* video player END */

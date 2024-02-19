@@ -23,16 +23,16 @@ Call function with your parameters
     return window.stpdVideo.setConfig({
       videoSrc: 'https://example.com/uploads/my-video.mp4',
       initialAutoplay: false,
-      thumbnails: [
+      playlist: [
         { videoSrc: 'https://example.com/uploads/my-video.mp4', thumbnailSrc: 'https://example.com/uploads/my-video-thumbnail.jpg' },
         { videoSrc: 'https://example.com/uploads/my-video-2.mp4', thumbnailSrc: 'https://example.com/uploads/my-video-thumbnail-2.jpg' },
         { videoSrc: 'https://example.com/uploads/my-video-3.mp4', thumbnailSrc: 'https://example.com/uploads/my-video-thumbnail-3.jpg' }
       ],
       miniPlayer: [
-        { showOnlyOnAds: false, width: 400, position: 'br', spacing: [50, 50] }
+        { showOnlyOnAds: false, width: '400px', position: 'br', spacing: ['50px', '50px'] }
       ],
       miniPlayerMobile: [
-        { showOnlyOnAds: false, width: 300, position: 'b', spacing: 100 }
+        { showOnlyOnAds: false, width: '60%', position: 'bl', spacing: ['100px', '50%'] }
       ],
       adUnit: 'http://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=xml_vmap1&unviewed_position_start=1&cust_params=sample_ar%3Dpremidpostpod%26deployment%3Dgmf-js&cmsid=496&vid=short_onecue&correlator=',    // adX ad unit
       debug: true
@@ -53,7 +53,7 @@ Parameter description:
   - Initial video on page load
 - `initialAutoplay:`
   - Autoplay on page load
-- `thumbnails:`
+- `playlist:`
   - Can be removed if no playlist required.
   - Include initial video as the first playlist element.
   - `videoSrc:`
@@ -66,22 +66,22 @@ Parameter description:
   - `showOnlyOnAds:`
     - Show mini player only when ad is playing or all the time.
   - `width:`
-    - Mini player width. Height will be adjusted to aspect ratio.
+    - Mini player width (px / % / ect). Height will be adjusted to aspect ratio.
   - `position:`
     - Values: { tl / tr / bl / br }
   - `spacing:`
-    - Values: [ { t / b } , { l / r } ]
+    - Values: [ { t / b } px / % / ect , { l / r } px / % / ect ]
 - `miniPlayerMobile:`
   - MOBILE
   - Can be removed if no mini player required.
   - `showOnlyOnAds:`
     - Show mini player only when ad is playing or all the time.
   - `width:`
-    - Mini player width. Height will be adjusted to aspect ratio.
+    - Mini player width (px / % / ect). Height will be adjusted to aspect ratio.
   - `position:`
-    - Values: { t / b }
+    - Values: { tl / tr / bl / br }
   - `spacing:`
-    - Values: { t / b }
+    - Values: [ { t / b } px / % / ect , { l / r } px / % / ect ]
 - `adUnit:`
   - AdX ad unit.
 - `debug:`

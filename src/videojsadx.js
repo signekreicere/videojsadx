@@ -21,7 +21,7 @@ import stpdLogoImage from './assets/setupad.svg';
         let defaultConfig = {
             videoSrc: 'https://www.w3schools.com/html/mov_bbb.mp4',
             initialAutoplay: false,
-            thumbnails: [],
+            playlist: [],
             miniPlayer: [],
             miniPlayerMobile: [],
             adUnit: '',
@@ -45,7 +45,7 @@ import stpdLogoImage from './assets/setupad.svg';
             // Defining user configs
             let videoSrc = config.videoSrc;
             let initialAutoplay = config.initialAutoplay;
-            let thumbnails = config.thumbnails || [];
+            let playlist = config.playlist || [];
             let adUnit = config.adUnit;
             let debug = config.debug;
             // Defining user configs: mini player
@@ -68,12 +68,14 @@ import stpdLogoImage from './assets/setupad.svg';
             let miniPlayerOnlyOnAdsMobile;
             let miniPlayerSizeMobile;
             let miniPlayerPositionMobile;
-            let miniPlayerSpacingMobile;
+            let miniPlayerSpacingXMobile;
+            let miniPlayerSpacingYMobile;
             if (miniPlayerMobile.length > 0) {
                 miniPlayerOnlyOnAdsMobile = config.miniPlayerMobile[0].showOnlyOnAds;
                 miniPlayerSizeMobile = config.miniPlayerMobile[0].width;
                 miniPlayerPositionMobile = config.miniPlayerMobile[0].position;
-                miniPlayerSpacingMobile = config.miniPlayerMobile[0].spacing;
+                miniPlayerSpacingXMobile = config.miniPlayerMobile[0].spacing[0];
+                miniPlayerSpacingYMobile = config.miniPlayerMobile[0].spacing[1];
             }
 
             // Defining defaults
@@ -121,8 +123,8 @@ import stpdLogoImage from './assets/setupad.svg';
                         </video>
                     </div>`;
 
-                    // Check if thumbnails exist and have a length greater than 0 to add scroller
-                    if (thumbnails && thumbnails.length > 0) {
+                    // Check if playlist exist and have a length greater than 0 to add scroller
+                    if (playlist && playlist.length > 0) {
                         htmlContent += `
                         <div class="scroller-container">
                             <div class="navscroll leftscroll" id="${'leftscroll_' + iterationId}">
@@ -132,7 +134,7 @@ import stpdLogoImage from './assets/setupad.svg';
                             </div>
                             <div class="scroller" id="${'scroller_' + iterationId}">`;
 
-                        thumbnails.forEach(thumbnail => {
+                        playlist.forEach(thumbnail => {
                             htmlContent += `
                                 <div class="stpd-thumbnail-container" data-video-src="${thumbnail.videoSrc}">
                                     <img class="stpd-thumbnail-img" src="${thumbnail.thumbnailSrc}" alt="Video Thumbnail">
@@ -171,6 +173,7 @@ import stpdLogoImage from './assets/setupad.svg';
                         controls: true,
                         autoplay: initialAutoplay,
                         preload: 'auto',
+                        playsinline: true,
                         debug: debug === true
                     });
 
@@ -204,7 +207,7 @@ import stpdLogoImage from './assets/setupad.svg';
                     console.error('Container element with id ' + containerId + ' not found.');
                 }
 
-                if (thumbnails && thumbnails.length > 0) {
+                if (playlist && playlist.length > 0) {
                     runScrollerScripts();
                 }
             }
@@ -300,7 +303,7 @@ import stpdLogoImage from './assets/setupad.svg';
                     }
                 }
 
-                // Thumbnails: Request ads on video change + force play video with playlistItemClicked
+                // Playlist: Request ads on video change + force play video with playlistItemClicked
                 function onPlaylistItemClick(player, event) {
                     if (!adBreakActive) {
                         if (!initialized) {
@@ -364,22 +367,26 @@ import stpdLogoImage from './assets/setupad.svg';
             // Mini player: Set position based on configs
             function miniPlayerPositioning () {
                 if (isMobile) {
-                    videoElementContainer.style.cssText += "width: " + miniPlayerSizeMobile + "px; height: unset;";
-                    if (miniPlayerPositionMobile == 't') {
-                        videoElementContainer.style.cssText += "top: " + miniPlayerSpacingMobile + "px;";
-                    } else if (miniPlayerPositionMobile == 'b') {
-                        videoElementContainer.style.cssText += "bottom: " + miniPlayerSpacingMobile + "px;";
+                    videoElementContainer.style.cssText += "width: " + miniPlayerSizeMobile + "; height: unset;";
+                    if (miniPlayerPositionMobile == 'tl') {
+                        videoElementContainer.style.cssText += "top: " + miniPlayerSpacingXMobile + ";" + "left: " + miniPlayerSpacingYMobile + ";";
+                    } else if (miniPlayerPositionMobile == 'tr') {
+                        videoElementContainer.style.cssText += "top: " + miniPlayerSpacingXMobile + ";" + "right: " + miniPlayerSpacingYMobile + ";";
+                    } else if (miniPlayerPositionMobile == 'bl') {
+                        videoElementContainer.style.cssText += "bottom: " + miniPlayerSpacingXMobile + ";" + "left: " + miniPlayerSpacingYMobile + ";";
+                    } else if (miniPlayerPositionMobile == 'br') {
+                        videoElementContainer.style.cssText += "bottom: " + miniPlayerSpacingXMobile + ";" + "right: " + miniPlayerSpacingYMobile + ";";
                     }
                 } else {
-                    videoElementContainer.style.cssText += "width: " + miniPlayerSize + "px; height: unset;";
+                    videoElementContainer.style.cssText += "width: " + miniPlayerSize + "; height: unset;";
                     if (miniPlayerPosition == 'tl') {
-                        videoElementContainer.style.cssText += "top: " + miniPlayerSpacingX + "px;" + "left: " + miniPlayerSpacingY + "px;";
+                        videoElementContainer.style.cssText += "top: " + miniPlayerSpacingX + ";" + "left: " + miniPlayerSpacingY + ";";
                     } else if (miniPlayerPosition == 'tr') {
-                        videoElementContainer.style.cssText += "top: " + miniPlayerSpacingX + "px;" + "right: " + miniPlayerSpacingY + "px;";
+                        videoElementContainer.style.cssText += "top: " + miniPlayerSpacingX + ";" + "right: " + miniPlayerSpacingY + ";";
                     } else if (miniPlayerPosition == 'bl') {
-                        videoElementContainer.style.cssText += "bottom: " + miniPlayerSpacingX + "px;" + "left: " + miniPlayerSpacingY + "px;";
+                        videoElementContainer.style.cssText += "bottom: " + miniPlayerSpacingX + ";" + "left: " + miniPlayerSpacingY + ";";
                     } else if (miniPlayerPosition == 'br') {
-                        videoElementContainer.style.cssText += "bottom: " + miniPlayerSpacingX + "px;" + "right: " + miniPlayerSpacingY + "px;";
+                        videoElementContainer.style.cssText += "bottom: " + miniPlayerSpacingX + ";" + "right: " + miniPlayerSpacingY + ";";
                     }
                 }
             }
@@ -403,9 +410,9 @@ import stpdLogoImage from './assets/setupad.svg';
                 });
             }
 
-            // Thumbnails: Disable if ad is active
+            // Playlist: Disable if ad is active
             function toggleVideoScroller(adActive) {
-                if (thumbnails && thumbnails.length > 0) {
+                if (playlist && playlist.length > 0) {
                     let opacityValue = adActive ? 0.5 : 1;
                     let cursorValue = adActive ? 'default' : 'pointer';
                     scroller.style.opacity = opacityValue;
@@ -416,9 +423,9 @@ import stpdLogoImage from './assets/setupad.svg';
                 }
             }
 
-            // Thumbnails: Scrollability
+            // Playlist: Scrollability
             function scroll(direction) {
-                if (thumbnails && thumbnails.length > 0) {
+                if (playlist && playlist.length > 0) {
                     const currentScroll = scroller.scrollLeft;
                     const targetScroll = direction === 'left' ? currentScroll - 150 : currentScroll + 150;
 
@@ -430,9 +437,9 @@ import stpdLogoImage from './assets/setupad.svg';
                 }
             }
 
-            // Thumbnails: Change source
-            function thumbnailLinks() {
-                if (thumbnails && thumbnails.length > 0) {
+            // Playlist: Change source
+            function playlistLinks() {
+                if (playlist && playlist.length > 0) {
                     scrollerThumbnails.forEach(function (thumbnail) {
                         thumbnail.addEventListener('click', function () {
                             if (!adBreakActive) {
@@ -445,9 +452,9 @@ import stpdLogoImage from './assets/setupad.svg';
                 }
             }
 
-            // Thumbnails: Greys out SCROLL buttons if list at the end
+            // Playlist: Greys out SCROLL buttons if list at the end
             function updateButtonOpacity(scroller) {
-                if (thumbnails && thumbnails.length > 0) {
+                if (playlist && playlist.length > 0) {
                     const tolerance = 1;
                     const leftScroll = Math.floor(scroller.scrollLeft);
                     const clientWidth = Math.floor(scroller.clientWidth);
@@ -465,7 +472,7 @@ import stpdLogoImage from './assets/setupad.svg';
             }
 
 
-            // Thumbnails: Related function calls - runScrollerScripts () called in createVideoElement() after all elements generated
+            // Playlist: Related function calls - runScrollerScripts () called in createVideoElement() after all elements generated
             function runScrollerScripts () {
                 scroller.addEventListener('scroll', function () {
                     updateButtonOpacity(this);
@@ -479,7 +486,7 @@ import stpdLogoImage from './assets/setupad.svg';
             };
 
 
-            window.addEventListener("load", () => { createVideoElement(), updateButtonOpacity(scroller), thumbnailLinks(), showMiniPlayer(), closeMiniPlayer() });
+            window.addEventListener("load", () => { createVideoElement(), updateButtonOpacity(scroller), playlistLinks(), showMiniPlayer(), closeMiniPlayer() });
             window.addEventListener('scroll', () => { showMiniPlayer() });
 
         };
