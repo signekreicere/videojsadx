@@ -1,12 +1,12 @@
 {
   "name": "videojsadx",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Adx ads integration for VideoJS",
   "main": "src/videojsadx.js",
   "scripts": {
     "dev": "webpack --mode development",
     "build": "webpack --mode production",
-    "start": "webpack serve --open 'Chrome'"
+    "start": "webpack serve --open 'Chrome' ./test/videojsadx.html"
   },
   "browserslist": [
     "> 0.25%",
@@ -40,6 +40,9 @@
     "webpack": "^5.75.0",
     "webpack-cli": "^4.10.0",
     "webpack-dev-server": "^4.15.1"
+  },
+  "directories": {
+    "test": "test"
   },
   "repository": {
     "type": "git",

@@ -29,10 +29,13 @@ Call function with your parameters
         { videoSrc: 'https://example.com/uploads/my-video-3.mp4', thumbnailSrc: 'https://example.com/uploads/my-video-thumbnail-3.jpg' }
       ],
       miniPlayer: [
-        { showOnlyOnAds: false, position: 'br', spacing: [50, 50] }
+        { showOnlyOnAds: false, width: 400, position: 'br', spacing: [50, 50] }
       ],
-    adUnit: 'http://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=xml_vmap1&unviewed_position_start=1&cust_params=sample_ar%3Dpremidpostpod%26deployment%3Dgmf-js&cmsid=496&vid=short_onecue&correlator=',    // adX ad unit
-    debug: true
+      miniPlayerMobile: [
+        { showOnlyOnAds: false, width: 300, position: 'b', spacing: 100 }
+      ],
+      adUnit: 'http://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=xml_vmap1&unviewed_position_start=1&cust_params=sample_ar%3Dpremidpostpod%26deployment%3Dgmf-js&cmsid=496&vid=short_onecue&correlator=',    // adX ad unit
+      debug: true
     }, 'video-container-1');
     });
   </script>
@@ -58,13 +61,27 @@ Parameter description:
   - `thumbnailSrc:`
     - Thumbnail source for playlist item
 - `miniPlayer:`
+  - DESKTOP
   - Can be removed if no mini player required. 
   - `showOnlyOnAds:`
-    - Show mini player only when ad is playing or all the time 
+    - Show mini player only when ad is playing or all the time.
+  - `width:`
+    - Mini player width. Height will be adjusted to aspect ratio.
   - `position:`
     - Values: { tl / tr / bl / br }
   - `spacing:`
     - Values: [ { t / b } , { l / r } ]
+- `miniPlayerMobile:`
+  - MOBILE
+  - Can be removed if no mini player required.
+  - `showOnlyOnAds:`
+    - Show mini player only when ad is playing or all the time.
+  - `width:`
+    - Mini player width. Height will be adjusted to aspect ratio.
+  - `position:`
+    - Values: { t / b }
+  - `spacing:`
+    - Values: { t / b }
 - `adUnit:`
   - AdX ad unit.
 - `debug:`

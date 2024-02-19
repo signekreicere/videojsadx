@@ -28,15 +28,22 @@
 
 .stpd-video-fixed {
     position: fixed;
-    bottom: 40px;
-    right: 20px;
-    height: 150px;
-    width: 300px;
-    z-index: 999999999;
+    z-index: 9999;
+}
+@media (max-width: 767px) {
+    .stpd-video-fixed {
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
 }
 
 .stpd-video-placeholder {
     height: 100%;
+    width: 100%;
+    display: block;
+}
+.stpd-video-placeholder.d-none {
+    display: none;
 }
 
 .video-js .vjs-picture-in-picture-control {
@@ -44,20 +51,35 @@
 }
 
 .stpd-close-btn {
-    position: fixed;
-    bottom: 190px;
-    right: 20px;
-    z-index: 999999999;
-    border: 1px solid black;
-    border-radius: 5px;
-    padding: 5px 5px 5px 5px;
-    height: 15px;
-    width: 15px;
-    background-color: #c9c6c6;
+    position: absolute;
+    z-index: 99999;
     cursor: pointer;
+    background-color: #0000009e;
+    border-radius: 25px;
+    height: 30px;
+    width: 30px;
+    text-align: center;
+    top: -32px;
+    right: 0;
+}
+.stpd-close-btn svg {
+    margin-top: 8px;
 }
 .close-btn-hidden {
     display: none;
+}
+
+.stpdLogo {
+    position: absolute;
+    z-index: 99999;
+    top: 0;
+    left: 0;
+}
+.stpdLogo img{
+    height: 30px;
+}
+.stpd-video-fixed .stpdLogo img{
+    height: 20px;
 }
 
 /* video player END */

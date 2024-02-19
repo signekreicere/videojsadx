@@ -4,13 +4,15 @@
  * Copyright (c) 2024, Signe Kreicere
  */
 
+
+import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import 'videojs-contrib-ads/dist/videojs.ads.css';
 import 'videojs-ima/dist/videojs.ima.css';
 import "./style.css";
-import videojs from 'video.js';
 import 'videojs-contrib-ads';
 import 'videojs-ima';
+import stpdLogoImage from './assets/setupad.svg';
 
 (function (window) {
     'use strict';
@@ -21,6 +23,7 @@ import 'videojs-ima';
             initialAutoplay: false,
             thumbnails: [],
             miniPlayer: [],
+            miniPlayerMobile: [],
             adUnit: '',
             debug: false
         };
@@ -46,33 +49,46 @@ import 'videojs-ima';
             let adUnit = config.adUnit;
             let debug = config.debug;
             // Defining user configs: mini player
+            // For desktop
             let miniPlayer = config.miniPlayer || [];
             let miniPlayerOnlyOnAds;
+            let miniPlayerSize;
             let miniPlayerPosition;
             let miniPlayerSpacingX;
             let miniPlayerSpacingY;
             if (miniPlayer.length > 0) {
                 miniPlayerOnlyOnAds = config.miniPlayer[0].showOnlyOnAds;
+                miniPlayerSize = config.miniPlayer[0].width;
                 miniPlayerPosition = config.miniPlayer[0].position;
                 miniPlayerSpacingX = config.miniPlayer[0].spacing[0];
                 miniPlayerSpacingY = config.miniPlayer[0].spacing[1];
+            }
+            // For mobile
+            let miniPlayerMobile = config.miniPlayerMobile || [];
+            let miniPlayerOnlyOnAdsMobile;
+            let miniPlayerSizeMobile;
+            let miniPlayerPositionMobile;
+            let miniPlayerSpacingMobile;
+            if (miniPlayerMobile.length > 0) {
+                miniPlayerOnlyOnAdsMobile = config.miniPlayerMobile[0].showOnlyOnAds;
+                miniPlayerSizeMobile = config.miniPlayerMobile[0].width;
+                miniPlayerPositionMobile = config.miniPlayerMobile[0].position;
+                miniPlayerSpacingMobile = config.miniPlayerMobile[0].spacing;
             }
 
             // Defining defaults
             let videoContainer = document.getElementById(containerId);let currentPageUrl = window.location.href;
             let encodedPageUrl = encodeURIComponent(currentPageUrl);
             let iterationId = Math.random().toString(36).substr(2, 9);
+            let isMobile = (top.window.innerWidth <= 767);
+            if (debug) {console.log("Is mobile? Window inner width: " + top.window.innerWidth);};
             let player;
             let adBreakActive = false;
             let initialized = false;
             let playlistItemClicked = false;
-            // replacing [placeholder] with page URL or adding page URL
-            if (adUnit.includes("[placeholder]")) {
-                adUnit = adUnit.replace("[placeholder]", encodedPageUrl);
-            } else {
-                adUnit += "&description_url=" + encodedPageUrl;
-            }
-            if (debug) {console.log("Adunit url: " + adUnit);};
+            let populatedAdUnit;
+            let videoDuration;
+            let closeBtnHiddenRemoved = false;
 
             // Defining elements
             let videoElementContainer;
@@ -82,20 +98,24 @@ import 'videojs-ima';
             let scrollerRightBtn;
             let scrollerThumbnails;
             let closeBtn;
+            let videoPlaceholder;
+            let stpdLogo;
+            let adTagUrl
 
-            // Creating Video Element Structure + Initialise video
+            // Creating Video Element Structure + initialize video
             function createVideoElement() {
                 if (debug) {console.log(`Processed for ${containerId}`);};
                 if (videoContainer) {
                     // Start creating HTML structure
                     let htmlContent = `
-                    <div class="stpd-close-btn close-btn-hidden" id="${'close_button_' + iterationId}">
-                        <svg width="15" height="15" viewBox="0 0 15 15" xmlns="http://www.w3.org/2000/svg">
-                            <line x1="0" y1="0" x2="15" y2="15" stroke="black" stroke-width="3"/>
-                            <line x1="15" y1="0" x2="0" y2="15" stroke="black" stroke-width="3"/>
-                        </svg>
-                    </div>
                     <div class="stpd-video" id="${'stpd_video_' + iterationId}">
+                        <a id="${'stpdLogo_' + iterationId}" class="stpdLogo" href="https://setupad.com/"><img src="${stpdLogoImage}"></a>  
+                        <div class="stpd-close-btn close-btn-hidden" id="${'close_button_' + iterationId}">
+                            <svg width="15" height="15" viewBox="0 0 15 15" xmlns="http://www.w3.org/2000/svg">
+                                <line x1="0" y1="0" x2="15" y2="15" stroke="white" stroke-width="3"/>
+                                <line x1="15" y1="0" x2="0" y2="15" stroke="white" stroke-width="3"/>
+                            </svg>
+                        </div>
                         <video id="${'video_' + iterationId}" class="video-js vjs-default-skin vjs-16-9" controls preload="auto" muted>
                             <source src="${videoSrc}" type="video/mp4"/>
                         </video>
@@ -128,6 +148,9 @@ import 'videojs-ima';
                             </div>
                         </div>`;
                     }
+                    htmlContent += `
+                        <div class="stpd-video-placeholder d-none" id="${'stpd-video-placeholder_' + iterationId}"></div>
+                    `;
 
                     videoContainer.innerHTML = htmlContent;
 
@@ -139,12 +162,16 @@ import 'videojs-ima';
                     scrollerRightBtn = document.querySelector('#rightscroll_' + iterationId);
                     scrollerThumbnails = document.querySelectorAll('#scroller_' + iterationId + ' > .stpd-thumbnail-container');
                     closeBtn = document.querySelector('#close_button_' + iterationId);
+                    videoPlaceholder = document.querySelector('#stpd-video-placeholder_' + iterationId);
+                    videoPlaceholder = document.querySelector('#stpd-video-placeholder_' + iterationId);
+                    stpdLogo = document.querySelector('#stpdLogo_' + iterationId);
 
-                    // Initialise videoJS
+                    // initialize videoJS
                     player = videojs(`video_${iterationId}`, {
                         controls: true,
                         autoplay: initialAutoplay,
                         preload: 'auto',
+                        debug: debug === true
                     });
 
                     player.src({
@@ -152,7 +179,27 @@ import 'videojs-ima';
                         src: videoSrc,
                     });
 
+
+                    // Populate AdUnitUrl: replacing [placeholder] with page URL or adding page URL
+                    if (adUnit.includes("[placeholder]")) {
+                        adUnit = adUnit.replace("[placeholder]", encodedPageUrl);
+                    } else {
+                        adUnit += "&description_url=" + encodedPageUrl;
+                    }
+
+                    // BUGGY. Issue with timing.
+                    // Populate AdUnitUrl: Check video length
+                    // videoElement.onloadedmetadata = function() {
+                    //     videoDuration = Math.round(videoElement.duration * 1000);
+                    //     adUnit = adUnit + '&vid_d=' + videoDuration;
+                    //     if (debug) {console.log("AdUnit url: " + adUnit);};
+                    //     initializeAds();
+                    // };
+                    // Instead we add static value for now.
+                    adUnit = adUnit + "vid_d=10000";
+
                     initializeAds();
+                    setPlaceholderHeight();
                 } else {
                     console.error('Container element with id ' + containerId + ' not found.');
                 }
@@ -184,7 +231,7 @@ import 'videojs-ima';
 
                 var options = {
                     id: 'video_' + iterationId,
-                    adTagUrl: adUnit + '&description_url=' + encodedPageUrl,
+                    adTagUrl: adUnit,
                     adsManagerLoadedCallback: adsManagerLoadedCallback.bind(null, player)
                 };
 
@@ -247,6 +294,7 @@ import 'videojs-ima';
                         adBreakActive = true;
                     } else if (event.type == google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED) {
                         adBreakActive = false;
+                        showMiniPlayer();
                     } else {
                         if (debug) {console.log(containerId + ': Ad event:', event.type);};
                     }
@@ -260,6 +308,7 @@ import 'videojs-ima';
                         }
                         player.ima.setContentWithAdTag(null);
                         player.ima.requestAds();
+                        if (debug) {console.log("AdUnit url: " + adUnit);};
                     } else {
                         if (debug) {console.log(containerId + ": Change video: Wait for Ad to finish.");};
                     }
@@ -277,14 +326,35 @@ import 'videojs-ima';
                 );
             }
 
+            // Mini player: Set height for placeholder
+            function setPlaceholderHeight() {
+                let videoHeight = videoElementContainer.offsetHeight;
+                videoPlaceholder.style.height = videoHeight + 'px';
+            }
+
             // Mini player: Show miniPlayer setting is configured + check of when to show it
             function showMiniPlayer() {
-                let shouldShowMiniPlayer = ( ( (miniPlayer.length > 0) && !miniPlayerOnlyOnAds) || ( (miniPlayer.length > 0) && miniPlayerOnlyOnAds && adBreakActive) );
+                let shouldShowMiniPlayer = (
+                    ((initialAutoplay || (!player.paused() || adBreakActive)) && ((( (miniPlayer.length > 0 ) ) && !miniPlayerOnlyOnAds) ||
+                        (( (miniPlayer.length > 0) ) && miniPlayerOnlyOnAds && adBreakActive)) && !isMobile) ||
+                    ((initialAutoplay || (!player.paused() || adBreakActive)) && ((( (miniPlayerMobile.length > 0) ) && !miniPlayerOnlyOnAdsMobile) ||
+                        (( (miniPlayerMobile.length > 0) ) && miniPlayerOnlyOnAdsMobile && adBreakActive)) && isMobile)
+                );
+
                 if (shouldShowMiniPlayer && isElementOutOfView(videoContainer)) {
+                    videoPlaceholder.classList.remove('d-none');
                     videoElementContainer.classList.add('stpd-video-fixed');
-                    closeBtn.classList.remove('close-btn-hidden');
+                    if (!closeBtnHiddenRemoved) {
+                        setTimeout(() => {
+                            closeBtn.classList.remove('close-btn-hidden');
+                            closeBtnHiddenRemoved = true;
+                        }, 3000);
+                    } else {
+                        closeBtn.classList.remove('close-btn-hidden');
+                    }
                     miniPlayerPositioning ();
                 } else {
+                    videoPlaceholder.classList.add('d-none');
                     videoElementContainer.classList.remove('stpd-video-fixed');
                     closeBtn.classList.add('close-btn-hidden');
                     clearMiniPlayerPositioning();
@@ -293,34 +363,42 @@ import 'videojs-ima';
 
             // Mini player: Set position based on configs
             function miniPlayerPositioning () {
-                if (miniPlayerPosition == 'tl') {
-                    videoElementContainer.style.cssText += "top: " + (miniPlayerSpacingX + 28) + "px;" + "left: " + miniPlayerSpacingY + "px;";
-                    closeBtn.style.cssText += "top: " + miniPlayerSpacingX + "px;" + "left: " + miniPlayerSpacingY + "px;";
-                } else if (miniPlayerPosition == 'tr') {
-                    videoElementContainer.style.cssText += "top: " + (miniPlayerSpacingX + 28) + "px;" + "right: " + miniPlayerSpacingY + "px;";
-                    closeBtn.style.cssText += "top: " + miniPlayerSpacingX + "px;" + "right: " + miniPlayerSpacingY + "px;";
-                } else if (miniPlayerPosition == 'bl') {
-                    videoElementContainer.style.cssText += "bottom: " + miniPlayerSpacingX + "px;" + "left: " + miniPlayerSpacingY + "px;";
-                    closeBtn.style.cssText += "bottom: " + (miniPlayerSpacingX + 150) + "px;" + "left: " + miniPlayerSpacingY + "px;";
-                } else if (miniPlayerPosition == 'br') {
-                    videoElementContainer.style.cssText += "bottom: " + miniPlayerSpacingX + "px;" + "right: " + miniPlayerSpacingY + "px;";
-                    closeBtn.style.cssText += "bottom: " + (miniPlayerSpacingX + 150) + "px;" + "right: " + miniPlayerSpacingY + "px;";
+                if (isMobile) {
+                    videoElementContainer.style.cssText += "width: " + miniPlayerSizeMobile + "px; height: unset;";
+                    if (miniPlayerPositionMobile == 't') {
+                        videoElementContainer.style.cssText += "top: " + miniPlayerSpacingMobile + "px;";
+                    } else if (miniPlayerPositionMobile == 'b') {
+                        videoElementContainer.style.cssText += "bottom: " + miniPlayerSpacingMobile + "px;";
+                    }
+                } else {
+                    videoElementContainer.style.cssText += "width: " + miniPlayerSize + "px; height: unset;";
+                    if (miniPlayerPosition == 'tl') {
+                        videoElementContainer.style.cssText += "top: " + miniPlayerSpacingX + "px;" + "left: " + miniPlayerSpacingY + "px;";
+                    } else if (miniPlayerPosition == 'tr') {
+                        videoElementContainer.style.cssText += "top: " + miniPlayerSpacingX + "px;" + "right: " + miniPlayerSpacingY + "px;";
+                    } else if (miniPlayerPosition == 'bl') {
+                        videoElementContainer.style.cssText += "bottom: " + miniPlayerSpacingX + "px;" + "left: " + miniPlayerSpacingY + "px;";
+                    } else if (miniPlayerPosition == 'br') {
+                        videoElementContainer.style.cssText += "bottom: " + miniPlayerSpacingX + "px;" + "right: " + miniPlayerSpacingY + "px;";
+                    }
                 }
             }
 
             // Mini player: Remove - Set position based on configs
             function clearMiniPlayerPositioning() {
-                ['top', 'bottom', 'left', 'right'].forEach(property => {
+                ['top', 'bottom', 'left', 'right', 'width'].forEach(property => {
                     videoElementContainer.style.removeProperty(property);
-                    closeBtn.style.removeProperty(property);
+                    videoElementContainer.style.cssText += "height: 100%;";
                 });
             }
 
             // Mini player: Close button
             function closeMiniPlayer() {
                 closeBtn.addEventListener('click', function () {
+                    videoPlaceholder.classList.add('d-none');
                     videoElementContainer.classList.remove('stpd-video-fixed');
                     closeBtn.classList.add('close-btn-hidden');
+                    clearMiniPlayerPositioning();
                     showMiniPlayer = null;
                 });
             }
