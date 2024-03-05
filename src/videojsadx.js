@@ -12,7 +12,7 @@ import 'videojs-ima/dist/videojs.ima.css';
 import "./style.css";
 import 'videojs-contrib-ads';
 import 'videojs-ima';
-import stpdLogoImage from './assets/setupad.svg';
+import stpdLogoImage from './assets/setupad-short.svg';
 
 (function (window) {
     'use strict';
@@ -20,8 +20,12 @@ import stpdLogoImage from './assets/setupad.svg';
     function stpdVideo(stpdVideo) {
         let defaultConfig = {
             videoSrc: 'https://www.w3schools.com/html/mov_bbb.mp4',
+            thumbnailSrc: '',
+            thumbnailTitle: '',
             initialAutoplay: false,
             playlist: [],
+            playlistAutoTitles: false,
+            playlistAutoplay: false,
             miniPlayer: [],
             miniPlayerMobile: [],
             adUnit: '',
@@ -35,7 +39,7 @@ import stpdLogoImage from './assets/setupad.svg';
                 if (typeof elementConfig[key] !== 'undefined') {
                     elementConfig[key] = conf[key];
                 } else {
-                    throw new Error("stpdVideo config key '" + key + "' not found");
+                    throw new Error("stpdVideo config key '" + key + "' not populateTitle");
                 }
             }
             return { config: elementConfig, containerId };
@@ -44,8 +48,12 @@ import stpdLogoImage from './assets/setupad.svg';
         stpdVideo.run = function ({ config, containerId }) {
             // Defining user configs
             let videoSrc = config.videoSrc;
+            let thumbnailSrc = config.thumbnailSrc;
+            let thumbnailTitle = config.thumbnailTitle;
             let initialAutoplay = config.initialAutoplay;
             let playlist = config.playlist || [];
+            let playlistAutoTitles = config.playlistAutoTitles;
+            let playlistAutoplay = config.playlistAutoplay;
             let adUnit = config.adUnit;
             let debug = config.debug;
             // Defining user configs: mini player
@@ -83,14 +91,20 @@ import stpdLogoImage from './assets/setupad.svg';
             let encodedPageUrl = encodeURIComponent(currentPageUrl);
             let iterationId = Math.random().toString(36).substr(2, 9);
             let isMobile = (top.window.innerWidth <= 767);
-            if (debug) {console.log("Is mobile? Window inner width: " + top.window.innerWidth);};
+            if (debug) {console.log("Window inner width: " + top.window.innerWidth);};
             let player;
             let adBreakActive = false;
             let initialized = false;
             let playlistItemClicked = false;
+            let playlistProgressIndex = 0;
+            let playlistClickedIndex = -1;
             let populatedAdUnit;
             let videoDuration;
+            let videoEnded = false;
             let closeBtnHiddenRemoved = false;
+            let miniPlayerClosed;
+            let playerPaused = false;
+            let playerManuallyPaused = false;
 
             // Defining elements
             let videoElementContainer;
@@ -125,6 +139,12 @@ import stpdLogoImage from './assets/setupad.svg';
 
                     // Check if playlist exist and have a length greater than 0 to add scroller
                     if (playlist && playlist.length > 0) {
+                        // Populate playlist with initial video
+                        let initialVideo = {videoSrc: videoSrc, thumbnailSrc: thumbnailSrc, thumbnailTitle: thumbnailTitle}
+                        playlist = [initialVideo, ...playlist];
+                        if (debug) { console.log(playlist);};
+
+                        // Scroller generation
                         htmlContent += `
                         <div class="scroller-container">
                             <div class="navscroll leftscroll" id="${'leftscroll_' + iterationId}">
@@ -134,12 +154,23 @@ import stpdLogoImage from './assets/setupad.svg';
                             </div>
                             <div class="scroller" id="${'scroller_' + iterationId}">`;
 
-                        playlist.forEach(thumbnail => {
-                            htmlContent += `
-                                <div class="stpd-thumbnail-container" data-video-src="${thumbnail.videoSrc}">
-                                    <img class="stpd-thumbnail-img" src="${thumbnail.thumbnailSrc}" alt="Video Thumbnail">
-                                </div>`;
-                        });
+                            playlist.forEach(thumbnail => {
+                                var thumbID = 'thumb_img_' + Math.random().toString(36).substr(2, 9);
+                                var durationID = 'vid_dur_' + Math.random().toString(36).substr(2, 9);
+                                htmlContent += `
+                                    <div class="stpd-thumbnail-container" data-video-src="${thumbnail.videoSrc}">
+                                        <img class="stpd-thumbnail-img" id="${thumbID}" src="${thumbnail.thumbnailSrc}" alt="Video Thumbnail">
+                                        <span class="video-duration" id="${durationID}"></span>`;
+                                    if (thumbnail.thumbnailTitle){
+                                        htmlContent += `<div class="video-title">${thumbnail.thumbnailTitle}</div>`;
+                                    }
+                                htmlContent += `
+                                    </div>`;
+                                if (!thumbnail.thumbnailSrc){
+                                    generateThumbnails(thumbnail.videoSrc, thumbID)
+                                };
+                                getVideoDuration(thumbnail.videoSrc, durationID);
+                            });
 
                         htmlContent += `
                             </div>
@@ -159,7 +190,7 @@ import stpdLogoImage from './assets/setupad.svg';
                     // Defining elements (giving actual values)
                     videoElementContainer = document.querySelector('#stpd_video_' + iterationId);
                     videoElement = document.querySelector('#video_' + iterationId);
-                    scroller =  document.querySelector('#scroller_' + iterationId);
+                    scroller = document.querySelector('#scroller_' + iterationId);
                     scrollerLeftBtn = document.querySelector('#leftscroll_' + iterationId);
                     scrollerRightBtn = document.querySelector('#rightscroll_' + iterationId);
                     scrollerThumbnails = document.querySelectorAll('#scroller_' + iterationId + ' > .stpd-thumbnail-container');
@@ -174,14 +205,13 @@ import stpdLogoImage from './assets/setupad.svg';
                         autoplay: initialAutoplay,
                         preload: 'auto',
                         playsinline: true,
-                        debug: debug === true
+                        debug: true
                     });
 
                     player.src({
                         type: 'video/mp4',
                         src: videoSrc,
                     });
-
 
                     // Populate AdUnitUrl: replacing [placeholder] with page URL or adding page URL
                     if (adUnit.includes("[placeholder]")) {
@@ -190,29 +220,27 @@ import stpdLogoImage from './assets/setupad.svg';
                         adUnit += "&description_url=" + encodedPageUrl;
                     }
 
-                    // BUGGY. Issue with timing.
-                    // Populate AdUnitUrl: Check video length
-                    // videoElement.onloadedmetadata = function() {
-                    //     videoDuration = Math.round(videoElement.duration * 1000);
-                    //     adUnit = adUnit + '&vid_d=' + videoDuration;
-                    //     if (debug) {console.log("AdUnit url: " + adUnit);};
-                    //     initializeAds();
-                    // };
-                    // Instead we add static value for now.
                     adUnit = adUnit + "vid_d=10000";
 
                     initializeAds();
                     setPlaceholderHeight();
+                    if (playlistAutoplay == true) {
+                        videoEndedCheck(player);
+                    }
+
                 } else {
-                    console.error('Container element with id ' + containerId + ' not found.');
+                    console.error('Container element with id ' + containerId + ' not populateTitle.');
                 }
 
                 if (playlist && playlist.length > 0) {
                     runScrollerScripts();
+                    trackPlaylist();
+                    generateTitle(playlistAutoTitles);
                 }
             }
 
 
+            // Intitialise ads
             function initializeAds() {
                 // Remove controls from the player on iPad to stop native controls from stealing click
                 if ((navigator.userAgent.match(/iPad/i) ||
@@ -298,6 +326,9 @@ import stpdLogoImage from './assets/setupad.svg';
                     } else if (event.type == google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED) {
                         adBreakActive = false;
                         showMiniPlayer();
+                    } else if (event.type == google.ima.AdEvent.Type.ALL_ADS_COMPLETED) {
+                        console.log("ads have ended, video can be resumed");
+                        autoplayPlaylist(player);
                     } else {
                         if (debug) {console.log(containerId + ': Ad event:', event.type);};
                     }
@@ -319,8 +350,7 @@ import stpdLogoImage from './assets/setupad.svg';
                 }
             }
 
-
-            // Mini player: Check if big player out of view
+            // Global: Check if big player out of view
             function isElementOutOfView(el) {
                 const rect = el.getBoundingClientRect();
                 return (
@@ -328,6 +358,37 @@ import stpdLogoImage from './assets/setupad.svg';
                     rect.top >= (window.innerHeight || document.documentElement.clientHeight)
                 );
             }
+
+            // Global: Pause video if player out of view
+            function pausePlayer() {
+                if ( ((isElementOutOfView(videoContainer)) && ((miniPlayer.length <= 0 || miniPlayerClosed) && !isMobile) && !playerManuallyPaused) ||
+                    ((isElementOutOfView(videoContainer)) && ((miniPlayerMobile.length <= 0 || miniPlayerClosed) && isMobile) && !playerManuallyPaused) ) {
+
+                    if (!playerPaused) {
+                        player.pause();
+                        playerPaused = true;
+                    }
+                } else {
+                    if (playerPaused) {
+                        player.play();
+                        playerPaused = false;
+                    }
+                }
+            }
+
+            // Global: Track user interactions (pause/play) with the video player
+            function handlePlayerInteractions() {
+                if (videoElement) {
+                    videoElement.addEventListener('click', function() {
+                        if (player.paused()) {
+                            playerManuallyPaused = false;
+                        } else {
+                            playerManuallyPaused = true;
+                        }
+                    });
+                }
+            }
+
 
             // Mini player: Set height for placeholder
             function setPlaceholderHeight() {
@@ -339,9 +400,9 @@ import stpdLogoImage from './assets/setupad.svg';
             function showMiniPlayer() {
                 let shouldShowMiniPlayer = (
                     ((initialAutoplay || (!player.paused() || adBreakActive)) && ((( (miniPlayer.length > 0 ) ) && !miniPlayerOnlyOnAds) ||
-                        (( (miniPlayer.length > 0) ) && miniPlayerOnlyOnAds && adBreakActive)) && !isMobile) ||
+                        (( (miniPlayer.length > 0) ) && miniPlayerOnlyOnAds && adBreakActive)) && !isMobile && !miniPlayerClosed) ||
                     ((initialAutoplay || (!player.paused() || adBreakActive)) && ((( (miniPlayerMobile.length > 0) ) && !miniPlayerOnlyOnAdsMobile) ||
-                        (( (miniPlayerMobile.length > 0) ) && miniPlayerOnlyOnAdsMobile && adBreakActive)) && isMobile)
+                        (( (miniPlayerMobile.length > 0) ) && miniPlayerOnlyOnAdsMobile && adBreakActive)) && isMobile && !miniPlayerClosed)
                 );
 
                 if (shouldShowMiniPlayer && isElementOutOfView(videoContainer)) {
@@ -405,22 +466,96 @@ import stpdLogoImage from './assets/setupad.svg';
                     videoPlaceholder.classList.add('d-none');
                     videoElementContainer.classList.remove('stpd-video-fixed');
                     closeBtn.classList.add('close-btn-hidden');
+                    player.pause();
                     clearMiniPlayerPositioning();
-                    showMiniPlayer = null;
+                    miniPlayerClosed = true;
+                    playerManuallyPaused = true;
                 });
             }
 
-            // Playlist: Disable if ad is active
-            function toggleVideoScroller(adActive) {
-                if (playlist && playlist.length > 0) {
-                    let opacityValue = adActive ? 0.5 : 1;
-                    let cursorValue = adActive ? 'default' : 'pointer';
-                    scroller.style.opacity = opacityValue;
-                    scrollerThumbnails.forEach(function (thumbnail) {
-                        thumbnail.style.opacity = opacityValue;
-                        thumbnail.style.cursor = cursorValue;
+
+            // Playlist: Generate item thumbnail if none provided. Works only on local urls
+            function generateThumbnails(videoSrc, thumbID) {
+                const videoT = document.createElement('video');
+                videoT.src = videoSrc;
+
+                videoT.addEventListener('loadedmetadata', function() {
+                    videoT.currentTime = 5;
+                    videoT.pause();
+
+                    videoT.addEventListener('canplay', function() {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = videoT.videoWidth;
+                        canvas.height = videoT.videoHeight;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(videoT, 0, 0, canvas.width, canvas.height);
+                        const imgElement = document.getElementById(thumbID);
+                        if (imgElement) {
+                            imgElement.src = canvas.toDataURL();
+                        }
+                        videoT.remove();
+                    });
+                });
+            }
+
+            // Playlist: Generate title from URL
+            function generateTitle(t) {
+                let populateTitle = false;
+                if (t) { populateTitle = true; }
+
+                for (let i = 0; i < scrollerThumbnails.length; i++) {
+                    const thumbnail = scrollerThumbnails[i];
+                    const videoTitle = thumbnail.querySelector('.video-title');
+                    if (videoTitle) {
+                        populateTitle = true;
+                        break;
+                    }
+                }
+
+                function cleanUpTitle(url) {
+                    const fileName = url.split('/').pop();
+                    const fileNameWithoutExtension = fileName.split('.')[0];
+                    const cleanedFileName = fileNameWithoutExtension.replace(/_/g, ' ');
+                    const words = cleanedFileName.split('-').map((word, index) => index === 0 ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : word.toLowerCase());
+                    const title = words.join(' ');
+                    return title;
+                }
+
+                if (populateTitle) {
+                    scrollerThumbnails.forEach((thumbnail, index) => {
+                        const videoTitle = thumbnail.querySelector('.video-title');
+
+                        if (!videoTitle) {
+                            const videoSrc = thumbnail.getAttribute('data-video-src');
+                            const newTitleElement = document.createElement('div');
+                            newTitleElement.className = 'video-title';
+                            const cleanedTitle = cleanUpTitle(videoSrc);
+                            newTitleElement.textContent = cleanedTitle;
+                            thumbnail.appendChild(newTitleElement);
+                        }
                     });
                 }
+            }
+
+            // Playlist: Generate playlist item duration
+            function getVideoDuration(videoSrc, durationID) {
+                const video = document.createElement('video');
+                video.src = videoSrc;
+
+                video.addEventListener('loadedmetadata', function() {
+                    const duration = video.duration;
+                    video.remove();
+
+                    var minutes = Math.floor(duration / 60);
+                    var remainingSeconds = Math.floor(duration % 60);
+                    var formattedSeconds = remainingSeconds < 10 ? '0' + remainingSeconds : remainingSeconds;
+                    var formattedDuration = minutes + ':' + formattedSeconds;
+
+                    const durationElement = document.getElementById(durationID);
+                    durationElement.innerHTML = formattedDuration;
+                });
+
+                document.body.appendChild(video);
             }
 
             // Playlist: Scrollability
@@ -437,17 +572,15 @@ import stpdLogoImage from './assets/setupad.svg';
                 }
             }
 
-            // Playlist: Change source
-            function playlistLinks() {
+            // Playlist: Disable if ad is active
+            function toggleVideoScroller(adActive) {
                 if (playlist && playlist.length > 0) {
+                    let opacityValue = adActive ? 0.5 : 1;
+                    let cursorValue = adActive ? 'default' : 'pointer';
+                    scroller.style.opacity = opacityValue;
                     scrollerThumbnails.forEach(function (thumbnail) {
-                        thumbnail.addEventListener('click', function () {
-                            if (!adBreakActive) {
-                                let videoSrc = thumbnail.getAttribute('data-video-src');
-                                player.src(videoSrc);
-                                if (debug) {console.log(containerId + ": Playlist item clicked, changing source");};
-                            }
-                        });
+                        thumbnail.style.opacity = opacityValue;
+                        thumbnail.style.cursor = cursorValue;
                     });
                 }
             }
@@ -471,6 +604,64 @@ import stpdLogoImage from './assets/setupad.svg';
                 }
             }
 
+            // Playlist: track current video
+            function trackPlaylist(trigger, index) {
+                const currentVideo = scroller.querySelectorAll('.stpd-thumbnail-container')[playlistProgressIndex];
+                if (index !== undefined && index >= 0 && index < playlist.length) {
+                    playlistProgressIndex = index;
+                }
+                if (trigger > 0 || trigger === 0) {
+                    currentVideo.classList.remove('active');
+                    if (trigger === 1) {
+                        playlistProgressIndex = (playlistProgressIndex + 1) % playlist.length;
+                    }
+                }
+                const nextVideo = scroller.querySelectorAll('.stpd-thumbnail-container')[playlistProgressIndex];
+                nextVideo.classList.add('active');
+                if (debug){console.log("current playlist index: " + playlistProgressIndex);};
+            }
+
+            // Playlist: Check if video ended, call for next video
+            function videoEndedCheck(p) {
+                p.on('ended', function() {
+                    videoEnded = true;
+                    if (debug) {console.log("video has ended: " + videoEnded);};
+                    autoplayPlaylist(p)
+                });
+            }
+
+            // Playlist: Request ads on video change + change video source to next video in playlist and play it
+            function autoplayPlaylist(player) {
+                if (!adBreakActive && videoEnded) {
+                    trackPlaylist(1);
+                    const nextVideoSrc = scrollerThumbnails[playlistProgressIndex].getAttribute('data-video-src');
+                    player.src(nextVideoSrc);
+                    player.ima.setContentWithAdTag(null);
+                    player.ima.requestAds();
+                    if (debug) {console.log("AdUnit url: " + adUnit);};
+                    player.play();
+                    videoEnded = false;
+                } else {
+                    if (debug) {console.log(containerId + ": Change video: Wait for Ad to finish.");};
+                }
+            }
+
+            // Playlist: Change source on click
+            function playlistLinks() {
+                if (playlist && playlist.length > 0) {
+                    scrollerThumbnails.forEach(function(thumbnail, index) {
+                        thumbnail.addEventListener('click', function() {
+                            if (!adBreakActive) {
+                                const clickedIndex = index;
+                                videoSrc = thumbnail.getAttribute('data-video-src');
+                                player.src(videoSrc);
+                                player.play();
+                                trackPlaylist(0, clickedIndex);
+                            }
+                        });
+                    });
+                }
+            }
 
             // Playlist: Related function calls - runScrollerScripts () called in createVideoElement() after all elements generated
             function runScrollerScripts () {
@@ -486,8 +677,8 @@ import stpdLogoImage from './assets/setupad.svg';
             };
 
 
-            window.addEventListener("load", () => { createVideoElement(), updateButtonOpacity(scroller), playlistLinks(), showMiniPlayer(), closeMiniPlayer() });
-            window.addEventListener('scroll', () => { showMiniPlayer() });
+            window.addEventListener("load", () => { createVideoElement(), updateButtonOpacity(scroller), playlistLinks(), showMiniPlayer(), closeMiniPlayer(), pausePlayer(), handlePlayerInteractions(); });
+            window.addEventListener('scroll', () => { showMiniPlayer(), pausePlayer(); });
 
         };
 
