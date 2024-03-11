@@ -394,7 +394,8 @@
 
         let generatedCode = `<!-- head -->\n`;
         generatedCode += `<script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></` + `script>\n`;
-        generatedCode += `<script src="https://cdn.jsdelivr.net/npm/videojsadx@2.0.3/dist/videojsadx.js"></` + `script>\n\n`;
+        generatedCode += `<!-- NB! Check for latest version might not be updated -->\n`;
+        generatedCode += `<script src="https://cdn.jsdelivr.net/npm/videojsadx@2.1.4/dist/videojsadx.js"></` + `script>\n\n`;
         generatedCode += `<!-- body -->\n`;
         generatedCode += `<div class="stpd-video-container" id="${videoContainerId}">\n`;
         generatedCode += `    <script>\n`;
