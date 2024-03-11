@@ -71,9 +71,9 @@
 
 .stpdLogo {
     position: absolute;
-    z-index: 99999;
+    z-index: 2;
     top: 2px;
-    left: 2px;
+    right: 2px;
     width: 4%;
 }
 .stpdLogo img{

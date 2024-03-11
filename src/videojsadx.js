@@ -91,7 +91,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
             let encodedPageUrl = encodeURIComponent(currentPageUrl);
             let iterationId = Math.random().toString(36).substr(2, 9);
             let isMobile = (top.window.innerWidth <= 767);
-            if (debug) {console.log("Window inner width: " + top.window.innerWidth);};
+            if (debug) {console.log(containerId + ": Window inner width: " + top.window.innerWidth);};
             let player;
             let adBreakActive = false;
             let initialized = false;
@@ -103,6 +103,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
             let videoEnded = false;
             let closeBtnHiddenRemoved = false;
             let miniPlayerClosed;
+            let miniPlayerCloseAfterAd = false;
             let playerPaused = false;
             let playerManuallyPaused = false;
 
@@ -120,7 +121,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
 
             // Creating Video Element Structure + initialize video
             function createVideoElement() {
-                if (debug) {console.log(`Processed for ${containerId}`);};
+                if (debug) {console.log(containerId + ": Created");};
                 if (videoContainer) {
                     // Start creating HTML structure
                     let htmlContent = `
@@ -132,7 +133,10 @@ import stpdLogoImage from './assets/setupad-short.svg';
                                 <line x1="15" y1="0" x2="0" y2="15" stroke="white" stroke-width="3"/>
                             </svg>
                         </div>
-                        <video id="${'video_' + iterationId}" class="video-js vjs-default-skin vjs-16-9" controls preload="auto" muted>
+                        <video id="${'video_' + iterationId}" class="video-js vjs-default-skin vjs-16-9" controls preload="auto" muted poster=""`;
+                            if (thumbnailSrc)  { console.log("thumbnail source is: " + thumbnailSrc); htmlContent += ` poster="${thumbnailSrc}"`;}
+                            if (thumbnailTitle) { console.log("thumbnail title is: " + thumbnailTitle); htmlContent += ` title="${thumbnailTitle}"`;}
+                            htmlContent += `>
                             <source src="${videoSrc}" type="video/mp4"/>
                         </video>
                     </div>`;
@@ -142,6 +146,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
                         // Populate playlist with initial video
                         let initialVideo = {videoSrc: videoSrc, thumbnailSrc: thumbnailSrc, thumbnailTitle: thumbnailTitle}
                         playlist = [initialVideo, ...playlist];
+                        if (debug) { console.log(containerId + ": Playlist array below ↓↓↓");};
                         if (debug) { console.log(playlist);};
 
                         // Scroller generation
@@ -323,11 +328,16 @@ import stpdLogoImage from './assets/setupad-short.svg';
                 function onAdEvent(event) {
                     if (event.type == google.ima.AdEvent.Type.CONTENT_PAUSE_REQUESTED) {
                         adBreakActive = true;
+                        miniPlayerClosed = false;
+                        showMiniPlayer();
                     } else if (event.type == google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED) {
                         adBreakActive = false;
-                        showMiniPlayer();
+                        if (miniPlayerCloseAfterAd){
+                            closeMiniPlayer();
+                        } else {
+                            showMiniPlayer();
+                        }
                     } else if (event.type == google.ima.AdEvent.Type.ALL_ADS_COMPLETED) {
-                        console.log("ads have ended, video can be resumed");
                         autoplayPlaylist(player);
                     } else {
                         if (debug) {console.log(containerId + ': Ad event:', event.type);};
@@ -342,7 +352,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
                         }
                         player.ima.setContentWithAdTag(null);
                         player.ima.requestAds();
-                        if (debug) {console.log("AdUnit url: " + adUnit);};
+                        if (debug) {console.log(containerId + ": AdUnit url: " + adUnit);};
                     } else {
                         if (debug) {console.log(containerId + ": Change video: Wait for Ad to finish.");};
                     }
@@ -361,15 +371,16 @@ import stpdLogoImage from './assets/setupad-short.svg';
 
             // Global: Pause video if player out of view
             function pausePlayer() {
-                if ( ((isElementOutOfView(videoContainer)) && ((miniPlayer.length <= 0 || miniPlayerClosed) && !isMobile) && !playerManuallyPaused) ||
-                    ((isElementOutOfView(videoContainer)) && ((miniPlayerMobile.length <= 0 || miniPlayerClosed) && isMobile) && !playerManuallyPaused) ) {
-
+                if ( ((isElementOutOfView(videoContainer)) && (miniPlayer.length <= 0 && !isMobile) && !playerManuallyPaused) ||
+                    ((isElementOutOfView(videoContainer)) && (miniPlayerMobile.length <= 0 && isMobile) && !playerManuallyPaused) ) {
                     if (!playerPaused) {
+                        if (debug) { console.log(containerId + ": Pausing video player");};
                         player.pause();
                         playerPaused = true;
                     }
                 } else {
                     if (playerPaused) {
+                        if (debug) { console.log(containerId + ": Playing video player");};
                         player.play();
                         playerPaused = false;
                     }
@@ -462,17 +473,18 @@ import stpdLogoImage from './assets/setupad-short.svg';
 
             // Mini player: Close button
             function closeMiniPlayer() {
-                closeBtn.addEventListener('click', function () {
-                    videoPlaceholder.classList.add('d-none');
-                    videoElementContainer.classList.remove('stpd-video-fixed');
-                    closeBtn.classList.add('close-btn-hidden');
-                    player.pause();
-                    clearMiniPlayerPositioning();
-                    miniPlayerClosed = true;
-                    playerManuallyPaused = true;
-                });
+                videoPlaceholder.classList.add('d-none');
+                videoElementContainer.classList.remove('stpd-video-fixed');
+                closeBtn.classList.add('close-btn-hidden');
+                clearMiniPlayerPositioning();
+                miniPlayerClosed = true;
+                miniPlayerCloseAfterAd = true;
             }
 
+            // Mini player: Call close mini player fnct on button click.
+            function callCloseMiniPlayer () {
+                closeBtn.addEventListener('click', closeMiniPlayer);
+            }
 
             // Playlist: Generate item thumbnail if none provided. Works only on local urls
             function generateThumbnails(videoSrc, thumbID) {
@@ -618,14 +630,14 @@ import stpdLogoImage from './assets/setupad-short.svg';
                 }
                 const nextVideo = scroller.querySelectorAll('.stpd-thumbnail-container')[playlistProgressIndex];
                 nextVideo.classList.add('active');
-                if (debug){console.log("current playlist index: " + playlistProgressIndex);};
+                if (debug){console.log(containerId + ": Current playlist index: " + playlistProgressIndex);};
             }
 
             // Playlist: Check if video ended, call for next video
             function videoEndedCheck(p) {
                 p.on('ended', function() {
                     videoEnded = true;
-                    if (debug) {console.log("video has ended: " + videoEnded);};
+                    if (debug) {console.log(containerId + ": Video has ended: " + videoEnded);};
                     autoplayPlaylist(p)
                 });
             }
@@ -635,10 +647,14 @@ import stpdLogoImage from './assets/setupad-short.svg';
                 if (!adBreakActive && videoEnded) {
                     trackPlaylist(1);
                     const nextVideoSrc = scrollerThumbnails[playlistProgressIndex].getAttribute('data-video-src');
+                    let nextVideoThumbnail = scrollerThumbnails[playlistProgressIndex].querySelector('.stpd-thumbnail-img').getAttribute('src');
+                    let nextVideoTitle = scrollerThumbnails[playlistProgressIndex].querySelector('.video-title').innerHTML;
+                    videoElement.setAttribute('poster', nextVideoThumbnail);
+                    videoElement.setAttribute('title', nextVideoTitle);
                     player.src(nextVideoSrc);
                     player.ima.setContentWithAdTag(null);
                     player.ima.requestAds();
-                    if (debug) {console.log("AdUnit url: " + adUnit);};
+                    if (debug) {console.log(containerId + ": AdUnit url: " + adUnit);};
                     player.play();
                     videoEnded = false;
                 } else {
@@ -654,6 +670,10 @@ import stpdLogoImage from './assets/setupad-short.svg';
                             if (!adBreakActive) {
                                 const clickedIndex = index;
                                 videoSrc = thumbnail.getAttribute('data-video-src');
+                                let nextVideoThumbnail = scrollerThumbnails[index].querySelector('.stpd-thumbnail-img').getAttribute('src');
+                                let nextVideoTitle = scrollerThumbnails[index].querySelector('.video-title').innerHTML;
+                                videoElement.setAttribute('poster', nextVideoThumbnail);
+                                videoElement.setAttribute('title', nextVideoTitle);
                                 player.src(videoSrc);
                                 player.play();
                                 trackPlaylist(0, clickedIndex);
@@ -676,8 +696,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
                 });
             };
 
-
-            window.addEventListener("load", () => { createVideoElement(), updateButtonOpacity(scroller), playlistLinks(), showMiniPlayer(), closeMiniPlayer(), pausePlayer(), handlePlayerInteractions(); });
+            window.addEventListener("load", () => { createVideoElement(), updateButtonOpacity(scroller), playlistLinks(), showMiniPlayer(), callCloseMiniPlayer(), pausePlayer(), handlePlayerInteractions(); });
             window.addEventListener('scroll', () => { showMiniPlayer(), pausePlayer(); });
 
         };

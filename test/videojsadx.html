@@ -13,22 +13,27 @@
 <body>
 
 
+
 <div class="stpd-video-container" id="video-container-1">
   <script>
     window.stpdVideo = window.stpdVideo || { que: [] };
     window.stpdVideo.que.push(function() {
       return window.stpdVideo.setConfig({
-        videoSrc: 'https://www.w3schools.com/html/mov_bbb.mp4',
-        initialAutoplay: false,
+        videoSrc: 'https://www.sites.com/video.mp4',
+        thumbnailSrc: 'https://site.com/picture.png',
+        thumbnailTitle: 'Title1',
+        initialAutoplay: true,
         playlist: [
-          { videoSrc: 'https://www.w3schools.com/html/mov_bbb.mp4', thumbnailSrc: 'https://signe.stpd.io/wp-content/uploads/2023/12/mov_bbb.png' },
-          { videoSrc: 'https://storage.googleapis.com/gvabox/media/samples/android.mp4', thumbnailSrc: 'https://signe.stpd.io/wp-content/uploads/2023/12/android.jpg' }
+          { videoSrc: 'https://www.sites.com/video.mp4', thumbnailSrc: 'https://site.com/picture.png', thumbnailTitle: 'Title2' },
+          { videoSrc: 'https://www.sites.com/video.mp4', thumbnailSrc: 'https://site.com/picture.png', thumbnailTitle: 'Title3' }
         ],
+        playlistAutoTitles: true,
+        playlistAutoplay: true,
         miniPlayer: [
-          { showOnlyOnAds: false, width: '400px', position: 'br', spacing: ['50px', '50px'] }
+          { showOnlyOnAds: false, width: '600px', position: 'br', spacing: ['50px', '50px'] }
         ],
         miniPlayerMobile: [
-          { showOnlyOnAds: false, width: '60%', position: 'bl', spacing: ['100px', '50%'] }
+          { showOnlyOnAds: false, width: '60%', position: 'bl', spacing: ['100px', '0'] }
         ],
         adUnit: 'http://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=xml_vmap1&unviewed_position_start=1&cust_params=sample_ar%3Dpremidpostpod%26deployment%3Dgmf-js&cmsid=496&vid=short_onecue&correlator=',
         debug: true
@@ -38,20 +43,6 @@
 </div>
 
 
-
-
-<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dicta ex facere impedit minima odio officiis quaerat quod
-  repellat. Aliquam aperiam consequatur cupiditate deleniti enim eum illo impedit laborum, nemo rem!</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dicta ex facere impedit minima odio officiis quaerat quod
-  repellat. Aliquam aperiam consequatur cupiditate deleniti enim eum illo impedit laborum, nemo rem!</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dicta ex facere impedit minima odio officiis quaerat quod
-  repellat. Aliquam aperiam consequatur cupiditate deleniti enim eum illo impedit laborum, nemo rem!</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dicta ex facere impedit minima odio officiis quaerat quod
-  repellat. Aliquam aperiam consequatur cupiditate deleniti enim eum illo impedit laborum, nemo rem!</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dicta ex facere impedit minima odio officiis quaerat quod
-  repellat. Aliquam aperiam consequatur cupiditate deleniti enim eum illo impedit laborum, nemo rem!</p>
-<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dicta ex facere impedit minima odio officiis quaerat quod
-  repellat. Aliquam aperiam consequatur cupiditate deleniti enim eum illo impedit laborum, nemo rem!</p>
 <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dicta ex facere impedit minima odio officiis quaerat quod
   repellat. Aliquam aperiam consequatur cupiditate deleniti enim eum illo impedit laborum, nemo rem!</p>
 <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dicta ex facere impedit minima odio officiis quaerat quod
@@ -122,35 +113,6 @@
   maxime molestiae nesciunt officiis pariatur quisquam quos rerum sequi sint velit veniam voluptatum.</p>
 <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis est ex facere illum ipsa ipsam libero maiores,
   maxime molestiae nesciunt officiis pariatur quisquam quos rerum sequi sint velit veniam voluptatum.</p>
-
-
-
-<div class="stpd-video-container" id="video-container-2">
-  <script>
-    window.stpdVideo = window.stpdVideo || { que: [] };
-    window.stpdVideo.que.push(function() {
-      return window.stpdVideo.setConfig({
-        videoSrc: 'https://www.w3schools.com/html/mov_bbb.mp4',
-        initialAutoplay: false,
-        /*thumbnails: [
-            { videoSrc: 'https://aina.lt/wp-content/uploads/2023/12/Panevezyje-vyks-tarptautinis-imtyniu-turnyras.mp4', thumbnailSrc: 'https://aina.lt/wp-content/uploads/2023/12/aina-thumbnail-3.png' },
-            { videoSrc: 'https://aina.lt/wp-content/uploads/2023/12/Kaledinis-puciamuju-instrumentu-orkestru-koncertas-_Aukstyn-Kaledos_.mp4', thumbnailSrc: 'https://aina.lt/wp-content/uploads/2023/12/aina-thumbnail-2.png' },
-            { videoSrc: 'https://aina.lt/wp-content/uploads/2023/12/Panevezio-kolegijoje-pasirasyta-bendradarbiavimo-sutartis-.mp4', thumbnailSrc: 'https://aina.lt/wp-content/uploads/2023/12/aina-thumbnail-1.png' },
-            { videoSrc: 'https://www.w3schools.com/html/mov_bbb.mp4', thumbnailSrc: 'https://signe.stpd.io/wp-content/uploads/2023/12/mov_bbb.png' },
-            { videoSrc: 'https://storage.googleapis.com/gvabox/media/samples/android.mp4', thumbnailSrc: 'https://signe.stpd.io/wp-content/uploads/2023/12/android.jpg' }
-        ],*/
-        miniPlayer: [
-          { showOnlyOnAds: true, position: 'tl', spacing: [20, 30] }
-        ],
-        adUnit: 'http://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=xml_vmap1&unviewed_position_start=1&cust_params=sample_ar%3Dpremidpostpod%26deployment%3Dgmf-js&cmsid=496&vid=short_onecue&correlator=',
-        debug: true
-      }, 'video-container-2');
-    });
-  </script>
-</div>
-
-
-
 <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis est ex facere illum ipsa ipsam libero maiores,
   maxime molestiae nesciunt officiis pariatur quisquam quos rerum sequi sint velit veniam voluptatum.</p>
 <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis est ex facere illum ipsa ipsam libero maiores,
@@ -181,3 +143,6 @@
   maxime molestiae nesciunt officiis pariatur quisquam quos rerum sequi sint velit veniam voluptatum.</p>
 </body>
 </html>
+
+
+
