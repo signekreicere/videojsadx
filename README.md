@@ -25,6 +25,7 @@ Call function with your parameters
       thumbnailSrc: 'https://signe.stpd.io/wp-content/uploads/2023/06/1667-11.jpg',
       thumbnailTitle: 'Video title',
       initialAutoplay: true,
+      muted: false,
       playlist: [
         { videoSrc: 'https://example.com/uploads/my-video-1.mp4', thumbnailSrc: 'https://example.com/uploads/my-video-thumbnail-1.jpg', thumbnailTitle:'Video title 1' },
         { videoSrc: 'https://example.com/uploads/my-video-2.mp4', thumbnailSrc: 'https://example.com/uploads/my-video-thumbnail-2.jpg' },
@@ -38,7 +39,12 @@ Call function with your parameters
       miniPlayerMobile: [
         { showOnlyOnAds: false, width: '60%', position: 'bl', spacing: ['100px', '50%'] }
       ],
-      adUnit: 'http://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=xml_vmap1&unviewed_position_start=1&cust_params=sample_ar%3Dpremidpostpod%26deployment%3Dgmf-js&cmsid=496&vid=short_onecue&correlator=',    // adX ad unit
+      adUnit: 'http://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=xml_vmap1&unviewed_position_start=1&cust_params=sample_ar%3Dpremidpostpod%26deployment%3Dgmf-js&cmsid=496&vid=short_onecue&correlator=',
+      overlayAdElement: '<' + 'div id="my-ad">\n' +
+              '<' + 'script type="text/javascript">\n' +
+              'console.log("triggering some banner");\n' +
+              '<' + '/script>\n' +
+              '<' + '/div>',
       debug: true
     }, 'video-container-1');
     });
@@ -61,6 +67,8 @@ Parameter description:
   - Initial video title
 - `initialAutoplay:`
   - Autoplay on page load
+- `muted:`
+  - Play with sound on page load (NB! If initial autoplay also is turned on, video won't autoplay until users first interaction with page (click) because of global enhancing user experience policy.)
 - `playlist:`
   - Can be removed if no playlist required.
   - Initial video automatically included as the first playlist element
@@ -100,12 +108,8 @@ Parameter description:
     - Values: [ { t / b } px / % / ect , { l / r } px / % / ect ]
 - `adUnit:`
   - AdX ad unit.
+- `overlayAdElement:`
+  - Overlay Ad tag code (with divs and stuff). (!NB <body> code only. If this is not an independent code, all <head> calls need to be added manually)
 - `debug:`
   - Can be removed if no debug required
-
-
-
-
-
-
 

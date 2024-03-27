@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.11.6/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <link rel="icon" href="./src/assets/setupad-short.svg" type="image/x-icon">
+    <link rel="icon" href="../src/assets/setupad-short.svg" type="image/x-icon">
 </head>
 <body>
 
@@ -31,7 +31,7 @@
     }
 
     .stpd-logo {
-        background-image: url('./src/assets/setupad.svg');
+        background-image: url('../src/assets/setupad.svg');
         background-repeat: no-repeat;
         background-size: contain;
         background-position: center center;
@@ -80,6 +80,9 @@
         font-family: Consolas, monospace;
         white-space: pre-wrap;
     }
+    #overlayAdTagCode {
+        min-height: 110px;
+    }
 </style>
 
 <div>
@@ -99,7 +102,6 @@
                     <h3>Video container ID:</h3><span class="mandatory">*</span>
                     <i class="fas fa-info-circle info-icon ml-2"></i>
                     <div class="info-description">ID of video element container. For multiple video insertions create unique ID's.</div>
-                    <input type="text" class="form-control generate-code" id="videoContainerId" value="video-container-1">
                     <input type="text" class="form-control generate-code" id="videoContainerId" value="video-container-1">
                 </div>
             </div>
@@ -135,11 +137,18 @@
                         <input type="text" class="form-control generate-code" id="videoTitle" placeholder="My video">
                     </div>
 
-                    <div class="col-6">
+                    <div class="col-3">
                         <h3>Initial autoplay:</h3>
                         <i class="fas fa-info-circle info-icon"></i>
-                        <div class="info-description">Check to enable first video autoplay on page load.</div>
+                        <div class="info-description" style="width:100%;">Check to enable first video autoplay on page load.</div>
                         <input type="checkbox" class="form-control generate-code" id="videoAutoplay">
+                    </div>
+
+                    <div class="col-3">
+                        <h3>Initial sound:</h3>
+                        <i class="fas fa-info-circle info-icon"></i>
+                        <div class="info-description" style="width:100%;">Check to enable first video play with sound on page load. <br>NB! If initial autoplay also is turned on, video won't autoplay until users first interaction with page (click) because of global enhancing user experience policy.</div>
+                        <input type="checkbox" class="form-control generate-code" id="videoUnmuted">
                     </div>
                 </div>
 
@@ -307,11 +316,19 @@
         <div class="row">
             <div class="col-12">
                 <h2 class="col-12">Ads</h2>
+
                 <div class="col-12 pt-2">
-                    <h3>Ad tag URL:</h3>
+                    <h3>Video Ad tag URL:</h3>
                     <i class="fas fa-info-circle info-icon"></i>
                     <div class="info-description">Ad tag URL from GAM.</div>
                     <input type="text" class="form-control generate-code" id="adTagUrl" placeholder="http://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/123456789/video_tag_adx">
+                </div>
+
+                <div class="col-12 pt-2">
+                    <h3>Overlay Ad tag code:</h3>
+                    <i class="fas fa-info-circle info-icon"></i>
+                    <div class="info-description">Overlay Ad tag code (with divs and stuff). <br>!NB &lt;body&gt; code only. If this is not an independent code, all &lt;head&gt; calls need to be added manually</div>
+                    <textarea type="text" class="form-control generate-code" id="overlayAdTagCode" oninput="autoExpand(this)" ></textarea>
                 </div>
             </div>
         </div>
@@ -345,11 +362,51 @@
     </div>
 </div>
 
-<!-- sanitize inpute -->
+<!-- sanitize input -->
 <script>
     function sanitizeInput(value) {
         const regex = /[<>'"`^!~|]/g;
         return value.replace(regex, '');
+    }
+</script>
+
+<!-- format overlay ad code -->
+<script>
+    function cleanUpOverlayAdCode(overlayAdTagCode) {
+        if (overlayAdTagCode) {
+            let formattedCode = overlayAdTagCode.replace(/'/g, '"');
+
+            formattedCode = formattedCode.replace(/</g, "'<' + '");
+
+            let storedResult = formattedCode;
+            let firstLineSpaces = storedResult.match(/^\s*/)[0];
+            let lines = storedResult.split('\n');
+
+            formattedCode = lines.map((line, index) => {
+                let leadingSpaces = line.match(/^\s*/)[0];
+                let trimmedLine = line.trimLeft();
+                if (!trimmedLine.startsWith("'<")) {
+                    if (index === lines.length - 1) {
+                        return leadingSpaces + "'" + trimmedLine + "'";
+                    }
+                    return leadingSpaces + "'" + trimmedLine;
+                }
+                return line;
+            }).join('\n');
+
+            formattedCode = formattedCode.replace(/\n(?!$)/g, "\n" + firstLineSpaces);
+            formattedCode = formattedCode.replace(/\n/g, "\\n' + \n                                  ");
+
+            return formattedCode;
+        }
+    }
+</script>
+
+<!-- expand overlay ad text box on input -->
+<script>
+    function autoExpand(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
     }
 </script>
 
@@ -367,6 +424,7 @@
         const videoThumbnail = sanitizeInput(document.getElementById("videoThumbnail").value);
         const videoTitle = sanitizeInput(document.getElementById("videoTitle").value);
         const videoAutoplay = document.getElementById("videoAutoplay").checked;
+        const videoUnmuted = document.getElementById("videoUnmuted").checked;
 
         const playlistItems = document.querySelectorAll(".playlist-item");
         const togglePlaylist = document.getElementById("togglePlaylist").checked;
@@ -388,14 +446,15 @@
         const spacingYMobile = sanitizeInput(document.getElementById("spacingYMobile").value);
 
         const adTagUrl = sanitizeInput(document.getElementById("adTagUrl").value);
+        const overlayAdTagCode = cleanUpOverlayAdCode(document.getElementById("overlayAdTagCode").value);
         const debugging = document.getElementById("debugging").checked;
 
         let elementAdded = false;
 
         let generatedCode = `<!-- head -->\n`;
         generatedCode += `<script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></` + `script>\n`;
-        generatedCode += `<!-- NB! Check for latest version might not be updated -->\n`;
-        generatedCode += `<script src="https://cdn.jsdelivr.net/npm/videojsadx@2.1.4/dist/videojsadx.js"></` + `script>\n\n`;
+        generatedCode += `<!-- NB! Check if latest version, might not be updated -->\n`;
+        generatedCode += `<script src="https://cdn.jsdelivr.net/npm/videojsadx@3.0.0/dist/videojsadx.js"></` + `script>\n\n`;
         generatedCode += `<!-- body -->\n`;
         generatedCode += `<div class="stpd-video-container" id="${videoContainerId}">\n`;
         generatedCode += `    <script>\n`;
@@ -423,6 +482,12 @@
         if (videoAutoplay) {
             generatedCode += elementAdded ? ',\n' : '\n';
             generatedCode += `                initialAutoplay: ${videoAutoplay}`;
+            elementAdded = true;
+        }
+
+        if (videoUnmuted) {
+            generatedCode += elementAdded ? ',\n' : '\n';
+            generatedCode += `                muted: ${!videoUnmuted}`;
             elementAdded = true;
         }
 
@@ -498,6 +563,12 @@
         if (adTagUrl) {
             generatedCode += elementAdded ? ',\n' : '\n';
             generatedCode += `                adUnit: '${adTagUrl}'`;
+            elementAdded = true;
+        }
+
+        if (overlayAdTagCode) {
+            generatedCode += elementAdded ? ',\n' : '\n';
+            generatedCode += `                overlayAdElement: ${overlayAdTagCode}`;
             elementAdded = true;
         }
 
@@ -738,6 +809,12 @@
 
     b.addEventListener("click", addDNoneClassToElements);
     addDNoneClassToElements();
+</script>
+
+<!-- set placeholder for overlay ad field -->
+<script>
+    var placeholderContent = '<div id="my-ad">\n    <script>\n        googletag.cmd.push(function() { googletag.display("my-ad"); });\n    <\/script>\n<\/div>\n';
+    document.getElementById('overlayAdTagCode').setAttribute('placeholder', placeholderContent);
 </script>
 
 
