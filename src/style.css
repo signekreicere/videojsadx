@@ -115,7 +115,7 @@
     text-align: center;
 }
 .overlay-ad-hidden {
-    visibility: hidden;
+    visibility: hidden !important;
 }
 .stpd-overlay-ad-inner {
     display: inline-block;
