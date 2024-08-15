@@ -337,6 +337,27 @@
 
         <div class="row">
             <div class="col-12">
+                <h2 class="col-12">Watermark
+                    <input type="checkbox" class="generate-code" id="toggleWatermark" checked>
+                </h2>
+
+                <div class="col-12 pt-2 watermark">
+
+                    <div class="col-12 pt-2">
+                        <h3>Custom watermark URL:</h3>
+                        <i class="fas fa-info-circle info-icon"></i>
+                        <div class="info-description">Fill if custom watermark needed, otherwise Setupad logo will show</div>
+                        <input type="text" class="form-control generate-code" id="watermarkUrl" placeholder="https://videojs.stpd.io/setupad.svg">
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="seperator my-4"></div>
+
+        <div class="row">
+            <div class="col-12">
                 <h2 class="col-12">Debugging</h2>
                 <div class="col-12 pt-2">
                     <h3>Enable console logs:</h3>
@@ -385,11 +406,21 @@
             formattedCode = lines.map((line, index) => {
                 let leadingSpaces = line.match(/^\s*/)[0];
                 let trimmedLine = line.trimLeft();
+                /*if (!trimmedLine.startsWith("'<")) {
+                    if (index === lines.length - 1) {
+                        return leadingSpaces + "'" + trimmedLine + "'";
+                    }
+                    return leadingSpaces + "'" + trimmedLine;
+                }
+                return line; */
+
                 if (!trimmedLine.startsWith("'<")) {
                     if (index === lines.length - 1) {
                         return leadingSpaces + "'" + trimmedLine + "'";
                     }
                     return leadingSpaces + "'" + trimmedLine;
+                } else if (index === lines.length - 1) {
+                    return line + "'";
                 }
                 return line;
             }).join('\n');
@@ -445,6 +476,9 @@
         const spacingXMobile = sanitizeInput(document.getElementById("spacingXMobile").value);
         const spacingYMobile = sanitizeInput(document.getElementById("spacingYMobile").value);
 
+        const toggleWatermark = document.getElementById("toggleWatermark").checked;
+        const watermarkUrl = sanitizeInput(document.getElementById("watermarkUrl").value);
+
         const adTagUrl = sanitizeInput(document.getElementById("adTagUrl").value);
         const overlayAdTagCode = cleanUpOverlayAdCode(document.getElementById("overlayAdTagCode").value);
         const debugging = document.getElementById("debugging").checked;
@@ -454,7 +488,7 @@
         let generatedCode = `<!-- head -->\n`;
         generatedCode += `<script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></` + `script>\n`;
         generatedCode += `<!-- NB! Check if latest version, might not be updated -->\n`;
-        generatedCode += `<script src="https://cdn.jsdelivr.net/npm/videojsadx@3.1.0/dist/videojsadx.js"></` + `script>\n\n`;
+        generatedCode += `<script src="https://cdn.jsdelivr.net/npm/videojsadx@2.1.6/dist/videojsadx.js"></` + `script>\n\n`;
         generatedCode += `<!-- body -->\n`;
         generatedCode += `<div class="stpd-video-container" id="${videoContainerId}">\n`;
         generatedCode += `    <script>\n`;
@@ -572,6 +606,18 @@
             elementAdded = true;
         }
 
+        if (!toggleWatermark) {
+            generatedCode += elementAdded ? ',\n' : '\n';
+            generatedCode += `                watermark: false`;
+            elementAdded = true;
+        } else {
+            if (watermarkUrl) {
+                generatedCode += elementAdded ? ',\n' : '\n';
+                generatedCode += `                watermark: '${watermarkUrl}'`;
+                elementAdded = true;
+            }
+        }
+
         if (debugging) {
             generatedCode += elementAdded ? ',\n' : '\n';
             generatedCode += `                debug: true`;
@@ -624,6 +670,7 @@
     toggleDisplay("togglePlaylist", "playlist");
     toggleDisplay("toggleMiniDesktop", "miniDesktop");
     toggleDisplay("toggleMiniMobile", "miniMobile");
+    toggleDisplay("toggleWatermark", "watermark");
 
 
     togglePlaylist.addEventListener("change", function() {
@@ -636,6 +683,10 @@
 
     toggleMiniMobile.addEventListener("change", function() {
         toggleDisplay("toggleMiniMobile", "miniMobile");
+    });
+
+    toggleWatermark.addEventListener("change", function() {
+        toggleDisplay("toggleWatermark", "watermark");
     });
 </script>
 
@@ -769,6 +820,10 @@
 
     document.getElementById("toggleMiniMobile").addEventListener("change", function() {
         handleCheckboxChange('toggleMiniMobile', mobileElementIds);
+    });
+
+    document.getElementById("toggleWatermark").addEventListener("change", function() {
+        handleCheckboxChange('toggleWatermark', watermarks);
     });
 
     const outputBox = document.getElementById('outputBox');

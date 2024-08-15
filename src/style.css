@@ -93,8 +93,10 @@
     top: 50%;
     transform: translateY(-50%);
     cursor: default;
+    max-width: 90%;
+    height: 100%;
 }
-.stpdLogo {
+.stpdLogo, .publisherLogo {
     position: relative;
     right: 8px;
     height: 90%;

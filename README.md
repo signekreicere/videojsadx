@@ -110,6 +110,8 @@ Parameter description:
   - AdX ad unit.
 - `overlayAdElement:`
   - Overlay Ad tag code (with divs and stuff). (!NB <body> code only. If this is not an independent code, all <head> calls need to be added manually)
+- `watermark:`
+  - Values { true / false / URL } (Setupad logo enabled by default)
 - `debug:`
   - Can be removed if no debug required
 

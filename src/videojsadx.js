@@ -31,7 +31,8 @@ import stpdLogoImage from './assets/setupad-short.svg';
             miniPlayerMobile: [],
             adUnit: '',
             overlayAdElement: '',
-            debug: false
+            debug: false,
+            watermark: true
         };
 
         stpdVideo.setConfig = function (conf, containerId) {
@@ -60,6 +61,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
             let adUnit = config.adUnit;
             let overlayAdElement = config.overlayAdElement;
             let debug = config.debug;
+            let watermark = config.watermark;
             // Defining user configs: mini player
             // For desktop
             let miniPlayer = config.miniPlayer || [];
@@ -137,8 +139,15 @@ import stpdLogoImage from './assets/setupad-short.svg';
                             <div class="current-video-title" id="${'current_video_title_' + iterationId}">`
                                 if (thumbnailTitle) { htmlContent += `${thumbnailTitle}`;}
                             htmlContent += `
-                            </div>
-                            <a id="${'stpdLogo_' + iterationId}" class="stpdLogo" href="https://setupad.com/" target="_blank"><img src="${stpdLogoImage}"></a>
+                            </div>`
+                            if (watermark) {
+                                if (watermark === true) {
+                                    htmlContent += `<a class="stpdLogo" href="https://setupad.com/" target="_blank"><img src="${stpdLogoImage}"></a>`;
+                                } else if (watermark !== false) {
+                                    htmlContent += `<img class="publisherLogo" src="${watermark}">`;
+                                }
+                            }
+                    htmlContent += `
                         </div>
                         <div class="stpd-close-btn close-btn-hidden" id="${'close_button_' + iterationId}">
                             <svg width="15" height="15" viewBox="0 0 15 15" xmlns="http://www.w3.org/2000/svg">
@@ -229,7 +238,6 @@ import stpdLogoImage from './assets/setupad-short.svg';
                     closeBtn = document.querySelector('#close_button_' + iterationId);
                     videoPlaceholder = document.querySelector('#stpd-video-placeholder_' + iterationId);
                     videoPlaceholder = document.querySelector('#stpd-video-placeholder_' + iterationId);
-                    stpdLogo = document.querySelector('#stpdLogo_' + iterationId);
                     overlayAd = document.querySelector('#overlay_ad_' + iterationId);
                     overlayAdInner = document.querySelector('#overlay_ad_' + iterationId + '> .stpd-overlay-ad-inner');
                     overlayAdCloseBtn = document.querySelector('#overlay_ad_close_button_' + iterationId);
@@ -270,12 +278,6 @@ import stpdLogoImage from './assets/setupad-short.svg';
                     // Calling function after video player generated
                     initializeAds();
                     setPlaceholderHeight();
-                    if (overlayAdElement) {
-                        runAdScripts();
-                        closeOverlayAd();
-                        handleSizeChange();
-                        overlayAdSizeChange();
-                    }
                     if (playlistAutoplay == true) {
                         videoEndedCheck(player);
                     }
@@ -389,10 +391,14 @@ import stpdLogoImage from './assets/setupad-short.svg';
                         adBreakActive = true;
                         miniPlayerClosed = false;
                         showMiniPlayer();
-                        overlayAd.classList.add('overlay-ad-hidden');
+                        if (overlayAdElement) {
+                            overlayAd.classList.add('overlay-ad-hidden');
+                        }
                     } else if (event.type == google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED) {
                         adBreakActive = false;
-                        overlayAd.classList.remove('overlay-ad-hidden');
+                        if (overlayAdElement) {
+                            overlayAd.classList.remove('overlay-ad-hidden');
+                        }
                         if (miniPlayerCloseAfterAd){
                             closeMiniPlayer();
                         } else {
@@ -446,6 +452,14 @@ import stpdLogoImage from './assets/setupad-short.svg';
                     entries.forEach(entry => {
                         if (entry.isIntersecting) {
                             playerBeenInView = true;
+
+                            if (overlayAdElement) {
+                                runAdScripts();
+                                closeOverlayAd();
+                                handleSizeChange();
+                                overlayAdSizeChange();
+                            }
+
                             observer.disconnect();
                         }
                     });
@@ -532,13 +546,17 @@ import stpdLogoImage from './assets/setupad-short.svg';
                     videoPlaceholder.classList.remove('d-none');
                     videoElementContainer.classList.add('stpd-video-fixed');
                     closeBtn.classList.remove('close-btn-hidden');
-                    overlayAd.classList.add('overlay-ad-hidden');
+                    if (overlayAdElement) {
+                        overlayAd.classList.add('overlay-ad-hidden');
+                    }
                     miniPlayerPositioning ();
                 } else {
                     videoPlaceholder.classList.add('d-none');
                     videoElementContainer.classList.remove('stpd-video-fixed');
                     closeBtn.classList.add('close-btn-hidden');
-                    overlayAd.classList.remove('overlay-ad-hidden');
+                    if (overlayAdElement) {
+                        overlayAd.classList.remove('overlay-ad-hidden');
+                    }
                     clearMiniPlayerPositioning();
                 }
             }
