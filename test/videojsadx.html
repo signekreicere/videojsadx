@@ -6,8 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
-  <!-- won't be updated. check latest version -->
-  <script src="https://cdn.jsdelivr.net/npm/videojsadx@1.1.2/dist/videojsadx.js"></script>
+  <!-- Local dev bundle. Swap to CDN if you want to test the published package. -->
+  <script src="./videojsadx.js"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/videojsadx@3.2.1/dist/videojsadx.js"></script> -->
 
 </head>
 <body>
@@ -19,13 +20,13 @@
     window.stpdVideo = window.stpdVideo || { que: [] };
     window.stpdVideo.que.push(function() {
       return window.stpdVideo.setConfig({
-        videoSrc: 'https://www.sites.com/video.mp4',
-        thumbnailSrc: 'https://site.com/picture.png',
-        thumbnailTitle: 'Title1',
+        videoSrc: './media/nasa-earth-orbit.mp4',
+        thumbnailSrc: './media/thumb-1.svg',
+        thumbnailTitle: 'Sample Video 1',
         initialAutoplay: true,
         playlist: [
-          { videoSrc: 'https://www.sites.com/video.mp4', thumbnailSrc: 'https://site.com/picture.png', thumbnailTitle: 'Title2' },
-          { videoSrc: 'https://www.sites.com/video.mp4', thumbnailSrc: 'https://site.com/picture.png', thumbnailTitle: 'Title3' }
+          { videoSrc: './media/nasa-earth-orbit.mp4', thumbnailSrc: './media/thumb-2.svg', thumbnailTitle: 'Sample Video 2' },
+          { videoSrc: './media/nasa-earth-orbit.mp4', thumbnailSrc: './media/thumb-3.svg', thumbnailTitle: 'Sample Video 3' }
         ],
         playlistAutoTitles: true,
         playlistAutoplay: true,

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5f3dc4"/>
+      <stop offset="100%" stop-color="#be4bdb"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <path d="M120 520 L520 200 L920 520 Z" fill="#ffd8a8" opacity="0.9"/>
+  <text x="120" y="180" font-family="Arial, Helvetica, sans-serif" font-size="72" fill="#f8f9fa">Sample Video 3</text>
+  <text x="120" y="260" font-family="Arial, Helvetica, sans-serif" font-size="32" fill="#f1f3f5">Local CC0 video</text>
+</svg>

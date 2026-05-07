@@ -46,5 +46,15 @@ module.exports = {
         clean: {
             keep: /ignored\/dir\//, // Keep these assets under 'ignored/dir'.
         },
+    },
+    devServer: {
+        static: {
+            directory: path.join(__dirname, 'test'),
+        },
+        host: '0.0.0.0',
+        port: 8080,
+        open: {
+            target: ["http://localhost:8080/videojsadx.html"],
+        },
     }
 };

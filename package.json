@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "webpack --mode development",
     "build": "webpack --mode production",
-    "start": "webpack serve --open 'Chrome' ./test/videojsadx.html"
+    "format": "prettier --write \"src/**/*.{js,css,scss}\" \"test/**/*.{js,css,scss,html}\" \"webpack.config.js\" \"README.md\" \"INTERNAL.md\"",
+    "start": "webpack serve --mode development",
+    "start:docker": "docker compose up --build -d && open http://localhost:8080/videojsadx.html",
+    "start:container": "webpack serve --mode development --host 0.0.0.0 --port 8080"
   },
   "browserslist": [
     "> 0.25%",
@@ -19,27 +22,35 @@
     "adx"
   ],
   "author": "SIA Setupad, Signe Kreicere <signe.kreicere@gmail.com>",
+  "contributors": ["Edijs Belasovs <edijins2001@gmail.com>"],
   "license": "ISC",
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "video.js": "^8",
-    "videojs-ima": "^2.3.0",
-    "videojs-contrib-ads": "^7.0.0"
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "video.js": "^8.23.7",
+    "videojs-ima": "^2.6.0",
+    "videojs-contrib-ads": "^7.5.2"
   },
   "devDependencies": {
-    "@babel/cli": "^7.0.0",
-    "@babel/core": "^7.23.9",
-    "@babel/preset-env": "^7.23.9",
-    "@babel/preset-react": "^7.18.6",
-    "babel-loader": "^8.3.0",
-    "css-loader": "^6.10.0",
-    "sass-loader": "^14.1.0",
-    "node-sass": "^9.0.0",
-    "style-loader": "^3.3.4",
-    "webpack": "^5.75.0",
-    "webpack-cli": "^4.10.0",
-    "webpack-dev-server": "^4.15.1"
+    "@babel/cli": "^7.28.6",
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.5",
+    "@babel/preset-react": "^7.28.5",
+    "babel-loader": "^10.1.1",
+    "css-loader": "^7.1.4",
+    "sass-loader": "^16.0.7",
+    "sass": "^1.99.0",
+    "style-loader": "^4.0.0",
+    "prettier": "^3.8.3",
+    "webpack": "^5.106.2",
+    "webpack-cli": "^7.0.2",
+    "webpack-dev-server": "^5.2.3"
   },
   "directories": {
     "test": "test"

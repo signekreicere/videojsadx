@@ -8,7 +8,6 @@ Additionally have to add this script in "head"
 ```html
 <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
 ``` 
-
 # Description
 VideoJS AdX combines videojs, video-ima, cotrib-ads to simply display videos with AdX integration
 
