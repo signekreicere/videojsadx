@@ -3,3 +3,9 @@ services:
     build: .
     ports:
       - "8080:8080"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
