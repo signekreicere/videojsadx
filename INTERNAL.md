@@ -1,7 +1,9 @@
 # Internal Development
+
 This repo is public, but development is intended for internal use only.
 
 # Local development
+
 - Use the repo Node version
   `nvm use`
 - Install dependencies
@@ -11,14 +13,17 @@ This repo is public, but development is intended for internal use only.
 - Open `http://localhost:8080/videojsadx.html`
 
 # Docker (optional)
+
 - Start the dev server
   `npm run start:docker`
 - It should open `http://localhost:8080/videojsadx.html` automatically
 
 # Package contents
+
 Dev assets live in `test/` (including local sample media) and are excluded from npm publishes by the `files` allowlist in package.json.
 
-# Publishing 
+# Publishing
+
 - Update the version
   `npm version patch|minor|major`
 - Install and build

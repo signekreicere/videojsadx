@@ -1,56 +1,62 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Video Tag Code Generator</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.11.6/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <link rel="icon" href="../src/assets/setupad-short.svg" type="image/x-icon">
-</head>
-<body>
-
-
-<style>
-    h1 {
+    <link rel="icon" href="../src/assets/setupad-short.svg" type="image/x-icon" />
+  </head>
+  <body>
+    <style>
+      h1 {
         color: #01354f;
-    }
-    h2 {
+      }
+      h2 {
         font-size: 14px;
         padding-left: 0px;
         margin-bottom: 0px;
-    }
-    h3 {
+      }
+      h3 {
         font-size: 12px;
-    }
-    h4 {
+      }
+      h4 {
         font-size: 10px;
-    }
+      }
 
-    .stpd-logo {
+      .stpd-logo {
         background-image: url('../src/assets/setupad.svg');
         background-repeat: no-repeat;
         background-size: contain;
         background-position: center center;
-    }
+      }
 
-    .form-control {
+      .form-control {
         height: 28px;
-        min-width: 28px!important;
-        font-size: 12px!important;
-    }
-    input[type="checkbox"] {
-        width: unset!important;
-    }
+        min-width: 28px !important;
+        font-size: 12px !important;
+      }
+      input[type='checkbox'] {
+        width: unset !important;
+      }
 
-    .mandatory {
-        color: red; position: absolute; top: 3px;
-    }
+      .mandatory {
+        color: red;
+        position: absolute;
+        top: 3px;
+      }
 
-    .info-description {
+      .info-description {
         color: #000 !important;
         font-size: 14px;
         display: none;
@@ -64,349 +70,451 @@
         box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
         white-space: normal;
         /*right: 0;*/
-        left:0;
-    }
+        left: 0;
+      }
 
-    .info-icon, h3, h4 {
+      .info-icon,
+      h3,
+      h4 {
         display: inline-block;
         font-size: 12px;
-    }
+      }
 
-    .seperator {
+      .seperator {
         border-bottom: 2px solid gray;
         width: 100%;
-    }
-    .code-box {
+      }
+      .code-box {
         font-family: Consolas, monospace;
         white-space: pre-wrap;
-    }
-    #overlayAdTagCode {
+      }
+      #overlayAdTagCode {
         min-height: 110px;
-    }
-</style>
+      }
+    </style>
 
-<div>
-    <div class="container mt-5">
-
+    <div>
+      <div class="container mt-5">
         <div class="row">
-            <div class="col-6">
-                <h1>Video Tag Code Generator</h1>
-            </div>
-            <a class="col-4 offset-1 stpd-logo mr-2" href="https://setupad.com/" target="_blank"></a>
+          <div class="col-6">
+            <h1>Video Tag Code Generator</h1>
+          </div>
+          <a class="col-4 offset-1 stpd-logo mr-2" href="https://setupad.com/" target="_blank"></a>
         </div>
 
         <div class="row">
-            <div class="col-12">
-                <h2 class="col-12">Container</h2>
-                <div class="col-12 pt-2">
-                    <h3>Video container ID:</h3><span class="mandatory">*</span>
-                    <i class="fas fa-info-circle info-icon ml-2"></i>
-                    <div class="info-description">ID of video element container. For multiple video insertions create unique ID's.</div>
-                    <input type="text" class="form-control generate-code" id="videoContainerId" value="video-container-1">
-                </div>
+          <div class="col-12">
+            <h2 class="col-12">Container</h2>
+            <div class="col-12 pt-2">
+              <h3>Video container ID:</h3>
+              <span class="mandatory">*</span>
+              <i class="fas fa-info-circle info-icon ml-2"></i>
+              <div class="info-description">
+                ID of video element container. For multiple video insertions create unique ID's.
+              </div>
+              <input
+                type="text"
+                class="form-control generate-code"
+                id="videoContainerId"
+                value="video-container-1"
+              />
             </div>
-        </div>
-
-        <div class="seperator my-4"></div>
-
-        <div class="row">
-            <div class="col-12">
-                <h2 class="col-12">Main video attributes</h2>
-
-                <div class="col-12 pt-2 row">
-                    <div class="col-6">
-                        <h3>Video source URL:</h3>
-                        <i class="fas fa-info-circle info-icon"></i>
-                        <div class="info-description">Main video source.</div>
-                        <input type="text" class="form-control generate-code" id="videoSource" placeholder="https://setupad.com/video.mp4">
-                    </div>
-
-                    <div class="col-6">
-                        <h3>Video thumbnail URL:</h3>
-                        <i class="fas fa-info-circle info-icon"></i>
-                        <div class="info-description">Main video thumbnail source.</div>
-                        <input type="text" class="form-control generate-code" id="videoThumbnail" placeholder="https://setupad.com/video.png">
-                    </div>
-                </div>
-
-                <div class="col-12 pt-2 row">
-                    <div class="col-6">
-                        <h3>Video title:</h3>
-                        <i class="fas fa-info-circle info-icon"></i>
-                        <div class="info-description">Main video title.</div>
-                        <input type="text" class="form-control generate-code" id="videoTitle" placeholder="My video">
-                    </div>
-
-                    <div class="col-3">
-                        <h3>Initial autoplay:</h3>
-                        <i class="fas fa-info-circle info-icon"></i>
-                        <div class="info-description" style="width:100%;">Check to enable first video autoplay on page load.</div>
-                        <input type="checkbox" class="form-control generate-code" id="videoAutoplay">
-                    </div>
-
-                    <div class="col-3">
-                        <h3>Initial sound:</h3>
-                        <i class="fas fa-info-circle info-icon"></i>
-                        <div class="info-description" style="width:100%;">Check to enable first video play with sound on page load. <br>NB! If initial autoplay also is turned on, video won't autoplay until users first interaction with page (click) because of global enhancing user experience policy.</div>
-                        <input type="checkbox" class="form-control generate-code" id="videoUnmuted">
-                    </div>
-                </div>
-
-            </div>
+          </div>
         </div>
 
         <div class="seperator my-4"></div>
 
         <div class="row">
-            <div class="col-12">
-                <h2 class="col-12">
-                    Playlist
-                    <input type="checkbox" class="generate-code" id="togglePlaylist">
-                </h2>
+          <div class="col-12">
+            <h2 class="col-12">Main video attributes</h2>
 
-                <div class="col-12 pt-2 playlist">
+            <div class="col-12 pt-2 row">
+              <div class="col-6">
+                <h3>Video source URL:</h3>
+                <i class="fas fa-info-circle info-icon"></i>
+                <div class="info-description">Main video source.</div>
+                <input
+                  type="text"
+                  class="form-control generate-code"
+                  id="videoSource"
+                  placeholder="https://setupad.com/video.mp4"
+                />
+              </div>
 
-                    <div class="col-12 pt-2 row">
-                        <div class="col-6">
-                            <h3>Playlist autoplay:</h3>
-                            <i class="fas fa-info-circle info-icon"></i>
-                            <div class="info-description">Check to enable autoplay in playlist.</div>
-                            <input type="checkbox" class="form-control generate-code" id="playlistAutoplay">
-                        </div>
-
-                        <div class="col-6">
-                            <h3>Playlist auto titles:</h3>
-                            <i class="fas fa-info-circle info-icon"></i>
-                            <div class="info-description">Check to generate all playlist item titles.</div>
-                            <input type="checkbox" class="form-control generate-code" id="playlistAutoTitles">
-                        </div>
-                    </div>
-
-                    <!-- playlist item html generation goes here -->
-
-                    <button id="addPlaylistItemBtn" class="btn btn-primary">Add Playlist Item</button>
-                    <button id="removeLastPlaylistItemBtn" class="btn btn-danger">Remove Last Playlist Item</button>
-
-                </div>
-
+              <div class="col-6">
+                <h3>Video thumbnail URL:</h3>
+                <i class="fas fa-info-circle info-icon"></i>
+                <div class="info-description">Main video thumbnail source.</div>
+                <input
+                  type="text"
+                  class="form-control generate-code"
+                  id="videoThumbnail"
+                  placeholder="https://setupad.com/video.png"
+                />
+              </div>
             </div>
+
+            <div class="col-12 pt-2 row">
+              <div class="col-6">
+                <h3>Video title:</h3>
+                <i class="fas fa-info-circle info-icon"></i>
+                <div class="info-description">Main video title.</div>
+                <input
+                  type="text"
+                  class="form-control generate-code"
+                  id="videoTitle"
+                  placeholder="My video"
+                />
+              </div>
+
+              <div class="col-3">
+                <h3>Initial autoplay:</h3>
+                <i class="fas fa-info-circle info-icon"></i>
+                <div class="info-description" style="width: 100%">
+                  Check to enable first video autoplay on page load.
+                </div>
+                <input type="checkbox" class="form-control generate-code" id="videoAutoplay" />
+              </div>
+
+              <div class="col-3">
+                <h3>Initial sound:</h3>
+                <i class="fas fa-info-circle info-icon"></i>
+                <div class="info-description" style="width: 100%">
+                  Check to enable first video play with sound on page load. <br />NB! If initial
+                  autoplay also is turned on, video won't autoplay until users first interaction
+                  with page (click) because of global enhancing user experience policy.
+                </div>
+                <input type="checkbox" class="form-control generate-code" id="videoUnmuted" />
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="seperator my-4"></div>
 
         <div class="row">
-            <div class="col-12">
+          <div class="col-12">
+            <h2 class="col-12">
+              Playlist
+              <input type="checkbox" class="generate-code" id="togglePlaylist" />
+            </h2>
 
-                <h2 class="col-12">Mini player desktop
-                    <input type="checkbox" class="generate-code" id="toggleMiniDesktop">
-                </h2>
-
-                <div class="col-12 pt-2 miniDesktop">
-
-                    <div class="col-12 pt-2">
-                        <h3>Show only on ads:</h3>
-                        <i class="fas fa-info-circle info-icon"></i>
-                        <div class="info-description">Check to show mini player only when ads are playing (Mini player shows all the time by default).</div>
-                        <input type="checkbox" class="form-control generate-code" id="showOnlyOnAdsDesktop">
-                    </div>
-
-                    <div class="col-12 pt-2 row">
-                        <div class="col-6">
-                            <h3>Width:</h3>
-                            <i class="fas fa-info-circle info-icon"></i>
-                            <div class="info-description">Width of mini player (Height will be adjusted proprotionally).</div>
-                            <input type="text" class="form-control generate-code" id="widthDesktop" placeholder="600px">
-                        </div>
-
-                        <div class="col-6">
-                            <h3>Position:</h3>
-                            <i class="fas fa-info-circle info-icon"></i>
-                            <div class="info-description">Position of mini player</div>
-                            <select class="form-control generate-code" id="positionDesktop">
-                                <option value="tl">Top / Left</option>
-                                <option value="tr">Top / Right</option>
-                                <option value="bl">Bottom / Left</option>
-                                <option value="br">Bottom / Right</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="col-12 pt-2 row">
-                        <h3 class="col-12">Spacing:</h3>
-                        <div class="col-6">
-                            <h4>Top / Bottom</h4>
-                            <i class="fas fa-info-circle info-icon"></i>
-                            <input type="text" class="form-control generate-code" id="spacingXDesktop" placeholder="150px">
-                            <div class="info-description">Top / Bottom spacing (gap from side) value + measurement unit.</div>
-                        </div>
-                        <div class="col-6">
-                            <h4>Left / Right</h4>
-                            <i class="fas fa-info-circle info-icon"></i>
-                            <div class="info-description">Left / Right spacing (gap from side) value + measurement unit.</div>
-                            <input type="text" class="form-control generate-code" id="spacingYDesktop" placeholder="50px">
-                        </div>
-                    </div>
-
+            <div class="col-12 pt-2 playlist">
+              <div class="col-12 pt-2 row">
+                <div class="col-6">
+                  <h3>Playlist autoplay:</h3>
+                  <i class="fas fa-info-circle info-icon"></i>
+                  <div class="info-description">Check to enable autoplay in playlist.</div>
+                  <input type="checkbox" class="form-control generate-code" id="playlistAutoplay" />
                 </div>
 
+                <div class="col-6">
+                  <h3>Playlist auto titles:</h3>
+                  <i class="fas fa-info-circle info-icon"></i>
+                  <div class="info-description">Check to generate all playlist item titles.</div>
+                  <input
+                    type="checkbox"
+                    class="form-control generate-code"
+                    id="playlistAutoTitles"
+                  />
+                </div>
+              </div>
+
+              <!-- playlist item html generation goes here -->
+
+              <button id="addPlaylistItemBtn" class="btn btn-primary">Add Playlist Item</button>
+              <button id="removeLastPlaylistItemBtn" class="btn btn-danger">
+                Remove Last Playlist Item
+              </button>
             </div>
+          </div>
         </div>
 
         <div class="seperator my-4"></div>
 
         <div class="row">
-            <div  class="col-12">
-                <h2 class="col-12">Mini player mobile
-                    <input type="checkbox" class="generate-code" id="toggleMiniMobile">
-                </h2>
+          <div class="col-12">
+            <h2 class="col-12">
+              Mini player desktop
+              <input type="checkbox" class="generate-code" id="toggleMiniDesktop" />
+            </h2>
 
-                <div class="col-12 pt-2 miniMobile">
+            <div class="col-12 pt-2 miniDesktop">
+              <div class="col-12 pt-2">
+                <h3>Show only on ads:</h3>
+                <i class="fas fa-info-circle info-icon"></i>
+                <div class="info-description">
+                  Check to show mini player only when ads are playing (Mini player shows all the
+                  time by default).
+                </div>
+                <input
+                  type="checkbox"
+                  class="form-control generate-code"
+                  id="showOnlyOnAdsDesktop"
+                />
+              </div>
 
-                    <div class="col-12 pt-2">
-                        <h3>Show only on ads:</h3>
-                        <i class="fas fa-info-circle info-icon"></i>
-                        <div class="info-description">Check to show mini player only when ads are playing (Mini player shows all the time by default).</div>
-                        <input type="checkbox" class="form-control generate-code" id="showOnlyOnAdsMobile">
-                    </div>
-
-                    <div class="col-12 pt-2 row">
-                        <div class="col-6">
-                            <h3>Width:</h3>
-                            <i class="fas fa-info-circle info-icon"></i>
-                            <div class="info-description">Width of mini player (Height will be adjusted proprotionally).</div>
-                            <input type="text" class="form-control generate-code" id="widthMobile" placeholder="60%">
-                        </div>
-
-                        <div class="col-6">
-                            <h3>Position:</h3>
-                            <i class="fas fa-info-circle info-icon"></i>
-                            <div class="info-description">Position of mini player</div>
-                            <select class="form-control generate-code" id="positionMobile">
-                                <option value="tl">Top / Left</option>
-                                <option value="tr">Top / Right</option>
-                                <option value="bl">Bottom / Left</option>
-                                <option value="br">Bottom / Right</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="col-12 pt-2 row">
-                        <h3 class="col-12">Spacing:</h3>
-                        <div class="col-6">
-                            <h4>Top / Bottom</h4>
-                            <i class="fas fa-info-circle info-icon"></i>
-                            <div class="info-description">Top / Bottom spacing (gap from side) value + measurement unit.</div>
-                            <input type="text" class="form-control generate-code" id="spacingXMobile" placeholder="150px">
-                        </div>
-                        <div class="col-6">
-                            <h4>Left / Right</h4>
-                            <i class="fas fa-info-circle info-icon"></i>
-                            <div class="info-description">Left / Right spacing (gap from side) value + measurement unit.</div>
-                            <input type="text" class="form-control generate-code" id="spacingYMobile" placeholder="50px">
-                        </div>
-                    </div>
-
+              <div class="col-12 pt-2 row">
+                <div class="col-6">
+                  <h3>Width:</h3>
+                  <i class="fas fa-info-circle info-icon"></i>
+                  <div class="info-description">
+                    Width of mini player (Height will be adjusted proprotionally).
+                  </div>
+                  <input
+                    type="text"
+                    class="form-control generate-code"
+                    id="widthDesktop"
+                    placeholder="600px"
+                  />
                 </div>
 
+                <div class="col-6">
+                  <h3>Position:</h3>
+                  <i class="fas fa-info-circle info-icon"></i>
+                  <div class="info-description">Position of mini player</div>
+                  <select class="form-control generate-code" id="positionDesktop">
+                    <option value="tl">Top / Left</option>
+                    <option value="tr">Top / Right</option>
+                    <option value="bl">Bottom / Left</option>
+                    <option value="br">Bottom / Right</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="col-12 pt-2 row">
+                <h3 class="col-12">Spacing:</h3>
+                <div class="col-6">
+                  <h4>Top / Bottom</h4>
+                  <i class="fas fa-info-circle info-icon"></i>
+                  <input
+                    type="text"
+                    class="form-control generate-code"
+                    id="spacingXDesktop"
+                    placeholder="150px"
+                  />
+                  <div class="info-description">
+                    Top / Bottom spacing (gap from side) value + measurement unit.
+                  </div>
+                </div>
+                <div class="col-6">
+                  <h4>Left / Right</h4>
+                  <i class="fas fa-info-circle info-icon"></i>
+                  <div class="info-description">
+                    Left / Right spacing (gap from side) value + measurement unit.
+                  </div>
+                  <input
+                    type="text"
+                    class="form-control generate-code"
+                    id="spacingYDesktop"
+                    placeholder="50px"
+                  />
+                </div>
+              </div>
             </div>
+          </div>
         </div>
 
         <div class="seperator my-4"></div>
 
         <div class="row">
-            <div class="col-12">
-                <h2 class="col-12">Ads</h2>
+          <div class="col-12">
+            <h2 class="col-12">
+              Mini player mobile
+              <input type="checkbox" class="generate-code" id="toggleMiniMobile" />
+            </h2>
 
-                <div class="col-12 pt-2">
-                    <h3>Video Ad tag URL:</h3>
-                    <i class="fas fa-info-circle info-icon"></i>
-                    <div class="info-description">Ad tag URL from GAM.</div>
-                    <input type="text" class="form-control generate-code" id="adTagUrl" placeholder="http://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/123456789/video_tag_adx">
+            <div class="col-12 pt-2 miniMobile">
+              <div class="col-12 pt-2">
+                <h3>Show only on ads:</h3>
+                <i class="fas fa-info-circle info-icon"></i>
+                <div class="info-description">
+                  Check to show mini player only when ads are playing (Mini player shows all the
+                  time by default).
+                </div>
+                <input
+                  type="checkbox"
+                  class="form-control generate-code"
+                  id="showOnlyOnAdsMobile"
+                />
+              </div>
+
+              <div class="col-12 pt-2 row">
+                <div class="col-6">
+                  <h3>Width:</h3>
+                  <i class="fas fa-info-circle info-icon"></i>
+                  <div class="info-description">
+                    Width of mini player (Height will be adjusted proprotionally).
+                  </div>
+                  <input
+                    type="text"
+                    class="form-control generate-code"
+                    id="widthMobile"
+                    placeholder="60%"
+                  />
                 </div>
 
-                <div class="col-12 pt-2">
-                    <h3>Overlay Ad tag code:</h3>
-                    <i class="fas fa-info-circle info-icon"></i>
-                    <div class="info-description">Overlay Ad tag code (with divs and stuff). <br>!NB &lt;body&gt; code only. If this is not an independent code, all &lt;head&gt; calls need to be added manually</div>
-                    <textarea type="text" class="form-control generate-code" id="overlayAdTagCode" oninput="autoExpand(this)" ></textarea>
+                <div class="col-6">
+                  <h3>Position:</h3>
+                  <i class="fas fa-info-circle info-icon"></i>
+                  <div class="info-description">Position of mini player</div>
+                  <select class="form-control generate-code" id="positionMobile">
+                    <option value="tl">Top / Left</option>
+                    <option value="tr">Top / Right</option>
+                    <option value="bl">Bottom / Left</option>
+                    <option value="br">Bottom / Right</option>
+                  </select>
                 </div>
+              </div>
+
+              <div class="col-12 pt-2 row">
+                <h3 class="col-12">Spacing:</h3>
+                <div class="col-6">
+                  <h4>Top / Bottom</h4>
+                  <i class="fas fa-info-circle info-icon"></i>
+                  <div class="info-description">
+                    Top / Bottom spacing (gap from side) value + measurement unit.
+                  </div>
+                  <input
+                    type="text"
+                    class="form-control generate-code"
+                    id="spacingXMobile"
+                    placeholder="150px"
+                  />
+                </div>
+                <div class="col-6">
+                  <h4>Left / Right</h4>
+                  <i class="fas fa-info-circle info-icon"></i>
+                  <div class="info-description">
+                    Left / Right spacing (gap from side) value + measurement unit.
+                  </div>
+                  <input
+                    type="text"
+                    class="form-control generate-code"
+                    id="spacingYMobile"
+                    placeholder="50px"
+                  />
+                </div>
+              </div>
             </div>
+          </div>
         </div>
 
         <div class="seperator my-4"></div>
 
         <div class="row">
-            <div class="col-12">
-                <h2 class="col-12">Watermark
-                    <input type="checkbox" class="generate-code" id="toggleWatermark" checked>
-                </h2>
+          <div class="col-12">
+            <h2 class="col-12">Ads</h2>
 
-                <div class="col-12 pt-2 watermark">
-
-                    <div class="col-12 pt-2">
-                        <h3>Custom watermark URL:</h3>
-                        <i class="fas fa-info-circle info-icon"></i>
-                        <div class="info-description">Fill if custom watermark needed, otherwise Setupad logo will show</div>
-                        <input type="text" class="form-control generate-code" id="watermarkUrl" placeholder="https://videojs.stpd.io/setupad.svg">
-                    </div>
-
-                </div>
+            <div class="col-12 pt-2">
+              <h3>Video Ad tag URL:</h3>
+              <i class="fas fa-info-circle info-icon"></i>
+              <div class="info-description">Ad tag URL from GAM.</div>
+              <input
+                type="text"
+                class="form-control generate-code"
+                id="adTagUrl"
+                placeholder="http://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/123456789/video_tag_adx"
+              />
             </div>
+
+            <div class="col-12 pt-2">
+              <h3>Overlay Ad tag code:</h3>
+              <i class="fas fa-info-circle info-icon"></i>
+              <div class="info-description">
+                Overlay Ad tag code (with divs and stuff). <br />!NB &lt;body&gt; code only. If this
+                is not an independent code, all &lt;head&gt; calls need to be added manually
+              </div>
+              <textarea
+                type="text"
+                class="form-control generate-code"
+                id="overlayAdTagCode"
+                oninput="autoExpand(this)"
+              ></textarea>
+            </div>
+          </div>
         </div>
 
         <div class="seperator my-4"></div>
 
         <div class="row">
-            <div class="col-12">
-                <h2 class="col-12">Debugging</h2>
-                <div class="col-12 pt-2">
-                    <h3>Enable console logs:</h3>
-                    <i class="fas fa-info-circle info-icon"></i>
-                    <div class="info-description">Check to enable various console logs for debugging</div>
-                    <input type="checkbox" class="form-control generate-code" id="debugging">
+          <div class="col-12">
+            <h2 class="col-12">
+              Watermark
+              <input type="checkbox" class="generate-code" id="toggleWatermark" checked />
+            </h2>
+
+            <div class="col-12 pt-2 watermark">
+              <div class="col-12 pt-2">
+                <h3>Custom watermark URL:</h3>
+                <i class="fas fa-info-circle info-icon"></i>
+                <div class="info-description">
+                  Fill if custom watermark needed, otherwise Setupad logo will show
                 </div>
+                <input
+                  type="text"
+                  class="form-control generate-code"
+                  id="watermarkUrl"
+                  placeholder="https://videojs.stpd.io/setupad.svg"
+                />
+              </div>
             </div>
+          </div>
         </div>
 
+        <div class="seperator my-4"></div>
+
+        <div class="row">
+          <div class="col-12">
+            <h2 class="col-12">Debugging</h2>
+            <div class="col-12 pt-2">
+              <h3>Enable console logs:</h3>
+              <i class="fas fa-info-circle info-icon"></i>
+              <div class="info-description">Check to enable various console logs for debugging</div>
+              <input type="checkbox" class="form-control generate-code" id="debugging" />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-</div>
 
-<div>
-    <div class="seperator my-5"></div>
-    <div class="container my-5">
+    <div>
+      <div class="seperator my-5"></div>
+      <div class="container my-5">
         <div class="row pb-5">
-            <h2 class="col-12 mb-2">Video Tag</h2>
-            <div class="col-12">
-                <pre id="outputBox" class="form-control code-box" style="height: 100%;"></pre>
-            </div>
+          <h2 class="col-12 mb-2">Video Tag</h2>
+          <div class="col-12">
+            <pre id="outputBox" class="form-control code-box" style="height: 100%"></pre>
+          </div>
         </div>
+      </div>
     </div>
-</div>
 
-<!-- sanitize input -->
-<script>
-    function sanitizeInput(value) {
+    <!-- sanitize input -->
+    <script>
+      function sanitizeInput(value) {
         const regex = /[<>'"`^!~|]/g;
         return value.replace(regex, '');
-    }
-</script>
+      }
+    </script>
 
-<!-- format overlay ad code -->
-<script>
-    function cleanUpOverlayAdCode(overlayAdTagCode) {
+    <!-- format overlay ad code -->
+    <script>
+      function cleanUpOverlayAdCode(overlayAdTagCode) {
         if (overlayAdTagCode) {
-            let formattedCode = overlayAdTagCode.replace(/'/g, '"');
+          let formattedCode = overlayAdTagCode.replace(/'/g, '"');
 
-            formattedCode = formattedCode.replace(/</g, "'<' + '");
+          formattedCode = formattedCode.replace(/</g, "'<' + '");
 
-            let storedResult = formattedCode;
-            let firstLineSpaces = storedResult.match(/^\s*/)[0];
-            let lines = storedResult.split('\n');
+          let storedResult = formattedCode;
+          let firstLineSpaces = storedResult.match(/^\s*/)[0];
+          let lines = storedResult.split('\n');
 
-            formattedCode = lines.map((line, index) => {
-                let leadingSpaces = line.match(/^\s*/)[0];
-                let trimmedLine = line.trimLeft();
-                /*if (!trimmedLine.startsWith("'<")) {
+          formattedCode = lines
+            .map((line, index) => {
+              let leadingSpaces = line.match(/^\s*/)[0];
+              let trimmedLine = line.trimLeft();
+              /*if (!trimmedLine.startsWith("'<")) {
                     if (index === lines.length - 1) {
                         return leadingSpaces + "'" + trimmedLine + "'";
                     }
@@ -414,81 +522,90 @@
                 }
                 return line; */
 
-                if (!trimmedLine.startsWith("'<")) {
-                    if (index === lines.length - 1) {
-                        return leadingSpaces + "'" + trimmedLine + "'";
-                    }
-                    return leadingSpaces + "'" + trimmedLine;
-                } else if (index === lines.length - 1) {
-                    return line + "'";
+              if (!trimmedLine.startsWith("'<")) {
+                if (index === lines.length - 1) {
+                  return leadingSpaces + "'" + trimmedLine + "'";
                 }
-                return line;
-            }).join('\n');
+                return leadingSpaces + "'" + trimmedLine;
+              } else if (index === lines.length - 1) {
+                return line + "'";
+              }
+              return line;
+            })
+            .join('\n');
 
-            formattedCode = formattedCode.replace(/\n(?!$)/g, "\n" + firstLineSpaces);
-            formattedCode = formattedCode.replace(/\n/g, "\\n' + \n                                  ");
+          formattedCode = formattedCode.replace(/\n(?!$)/g, '\n' + firstLineSpaces);
+          formattedCode = formattedCode.replace(
+            /\n/g,
+            "\\n' + \n                                  "
+          );
 
-            return formattedCode;
+          return formattedCode;
         }
-    }
-</script>
+      }
+    </script>
 
-<!-- expand overlay ad text box on input -->
-<script>
-    function autoExpand(textarea) {
+    <!-- expand overlay ad text box on input -->
+    <script>
+      function autoExpand(textarea) {
         textarea.style.height = 'auto';
         textarea.style.height = textarea.scrollHeight + 'px';
-    }
-</script>
+      }
+    </script>
 
-<!-- output generation -->
-<script>
-    $(document).ready(function(){
+    <!-- output generation -->
+    <script>
+      $(document).ready(function () {
         $('[data-toggle="popover"]').popover();
-    });
+      });
 
-    const elements = document.querySelectorAll(".generate-code");
+      const elements = document.querySelectorAll('.generate-code');
 
-    function generateCode() {
-        const videoContainerId = sanitizeInput(document.getElementById("videoContainerId").value);
-        const videoSource = sanitizeInput(document.getElementById("videoSource").value);
-        const videoThumbnail = sanitizeInput(document.getElementById("videoThumbnail").value);
-        const videoTitle = sanitizeInput(document.getElementById("videoTitle").value);
-        const videoAutoplay = document.getElementById("videoAutoplay").checked;
-        const videoUnmuted = document.getElementById("videoUnmuted").checked;
+      function generateCode() {
+        const videoContainerId = sanitizeInput(document.getElementById('videoContainerId').value);
+        const videoSource = sanitizeInput(document.getElementById('videoSource').value);
+        const videoThumbnail = sanitizeInput(document.getElementById('videoThumbnail').value);
+        const videoTitle = sanitizeInput(document.getElementById('videoTitle').value);
+        const videoAutoplay = document.getElementById('videoAutoplay').checked;
+        const videoUnmuted = document.getElementById('videoUnmuted').checked;
 
-        const playlistItems = document.querySelectorAll(".playlist-item");
-        const togglePlaylist = document.getElementById("togglePlaylist").checked;
-        let playlistAutoplay = document.getElementById("playlistAutoplay").checked;
-        let playlistAutoTitles = document.getElementById("playlistAutoTitles").checked;
+        const playlistItems = document.querySelectorAll('.playlist-item');
+        const togglePlaylist = document.getElementById('togglePlaylist').checked;
+        let playlistAutoplay = document.getElementById('playlistAutoplay').checked;
+        let playlistAutoTitles = document.getElementById('playlistAutoTitles').checked;
 
-        const toggleMiniDesktop = document.getElementById("toggleMiniDesktop").checked;
-        const showOnlyOnAdsDesktop = document.getElementById("showOnlyOnAdsDesktop").checked;
-        const widthDesktop = sanitizeInput(document.getElementById("widthDesktop").value);
-        const positionDesktop = sanitizeInput(document.getElementById("positionDesktop").value);
-        const spacingXDesktop = sanitizeInput(document.getElementById("spacingXDesktop").value);
-        const spacingYDesktop = sanitizeInput(document.getElementById("spacingYDesktop").value);
+        const toggleMiniDesktop = document.getElementById('toggleMiniDesktop').checked;
+        const showOnlyOnAdsDesktop = document.getElementById('showOnlyOnAdsDesktop').checked;
+        const widthDesktop = sanitizeInput(document.getElementById('widthDesktop').value);
+        const positionDesktop = sanitizeInput(document.getElementById('positionDesktop').value);
+        const spacingXDesktop = sanitizeInput(document.getElementById('spacingXDesktop').value);
+        const spacingYDesktop = sanitizeInput(document.getElementById('spacingYDesktop').value);
 
-        const toggleMiniMobile = document.getElementById("toggleMiniMobile").checked;
-        const showOnlyOnAdsMobile = document.getElementById("showOnlyOnAdsMobile").checked;
-        const widthMobile = sanitizeInput(document.getElementById("widthMobile").value);
-        const positionMobile = sanitizeInput(document.getElementById("positionMobile").value);
-        const spacingXMobile = sanitizeInput(document.getElementById("spacingXMobile").value);
-        const spacingYMobile = sanitizeInput(document.getElementById("spacingYMobile").value);
+        const toggleMiniMobile = document.getElementById('toggleMiniMobile').checked;
+        const showOnlyOnAdsMobile = document.getElementById('showOnlyOnAdsMobile').checked;
+        const widthMobile = sanitizeInput(document.getElementById('widthMobile').value);
+        const positionMobile = sanitizeInput(document.getElementById('positionMobile').value);
+        const spacingXMobile = sanitizeInput(document.getElementById('spacingXMobile').value);
+        const spacingYMobile = sanitizeInput(document.getElementById('spacingYMobile').value);
 
-        const toggleWatermark = document.getElementById("toggleWatermark").checked;
-        const watermarkUrl = sanitizeInput(document.getElementById("watermarkUrl").value);
+        const toggleWatermark = document.getElementById('toggleWatermark').checked;
+        const watermarkUrl = sanitizeInput(document.getElementById('watermarkUrl').value);
 
-        const adTagUrl = sanitizeInput(document.getElementById("adTagUrl").value);
-        const overlayAdTagCode = cleanUpOverlayAdCode(document.getElementById("overlayAdTagCode").value);
-        const debugging = document.getElementById("debugging").checked;
+        const adTagUrl = sanitizeInput(document.getElementById('adTagUrl').value);
+        const overlayAdTagCode = cleanUpOverlayAdCode(
+          document.getElementById('overlayAdTagCode').value
+        );
+        const debugging = document.getElementById('debugging').checked;
 
         let elementAdded = false;
 
         let generatedCode = `<!-- head -->\n`;
-        generatedCode += `<script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></` + `script>\n`;
+        generatedCode +=
+          `<script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></` + `script>\n`;
         generatedCode += `<!-- NB! Check if latest version, might not be updated -->\n`;
-        generatedCode += `<script src="https://cdn.jsdelivr.net/npm/videojsadx@2.1.6/dist/videojsadx.js"></` + `script>\n\n`;
+        generatedCode +=
+          `<script src="https://cdn.jsdelivr.net/npm/videojsadx@2.1.6/dist/videojsadx.js"></` +
+          `script>\n\n`;
         generatedCode += `<!-- body -->\n`;
         generatedCode += `<div class="stpd-video-container" id="${videoContainerId}">\n`;
         generatedCode += `    <script>\n`;
@@ -497,229 +614,231 @@
         generatedCode += `            return window.stpdVideo.setConfig({\n`;
 
         if (videoSource) {
-            generatedCode += `                videoSrc: '${videoSource}'`;
-            elementAdded = true;
+          generatedCode += `                videoSrc: '${videoSource}'`;
+          elementAdded = true;
         }
 
         if (videoThumbnail) {
-            generatedCode += elementAdded ? ',\n' : '\n';
-            generatedCode += `                thumbnailSrc: '${videoThumbnail}'`;
-            elementAdded = true;
+          generatedCode += elementAdded ? ',\n' : '\n';
+          generatedCode += `                thumbnailSrc: '${videoThumbnail}'`;
+          elementAdded = true;
         }
 
         if (videoTitle) {
-            generatedCode += elementAdded ? ',\n' : '\n';
-            generatedCode += `                thumbnailTitle: '${videoTitle}'`;
-            elementAdded = true;
+          generatedCode += elementAdded ? ',\n' : '\n';
+          generatedCode += `                thumbnailTitle: '${videoTitle}'`;
+          elementAdded = true;
         }
 
         if (videoAutoplay) {
-            generatedCode += elementAdded ? ',\n' : '\n';
-            generatedCode += `                initialAutoplay: ${videoAutoplay}`;
-            elementAdded = true;
+          generatedCode += elementAdded ? ',\n' : '\n';
+          generatedCode += `                initialAutoplay: ${videoAutoplay}`;
+          elementAdded = true;
         }
 
         if (videoUnmuted) {
-            generatedCode += elementAdded ? ',\n' : '\n';
-            generatedCode += `                muted: ${!videoUnmuted}`;
-            elementAdded = true;
+          generatedCode += elementAdded ? ',\n' : '\n';
+          generatedCode += `                muted: ${!videoUnmuted}`;
+          elementAdded = true;
         }
 
         if (togglePlaylist) {
-            generatedCode += elementAdded ? ',\n' : '\n';
-            generatedCode += `                playlist: [\n`;
+          generatedCode += elementAdded ? ',\n' : '\n';
+          generatedCode += `                playlist: [\n`;
 
-            // Loop through all playlist items
-            document.querySelectorAll(".playlist-item").forEach(function(item) {
-                console.log("trying to go though loop");
-                const videoSrcElement = item.querySelector(".playlist-video-source");
-                console.log(videoSrcElement);
-                const videoThumbnailElement = item.querySelector(".playlist-thumbnail");
-                const videoTitleElement = item.querySelector(".playlist-title");
+          // Loop through all playlist items
+          document.querySelectorAll('.playlist-item').forEach(function (item) {
+            console.log('trying to go though loop');
+            const videoSrcElement = item.querySelector('.playlist-video-source');
+            console.log(videoSrcElement);
+            const videoThumbnailElement = item.querySelector('.playlist-thumbnail');
+            const videoTitleElement = item.querySelector('.playlist-title');
 
-                if (videoSrcElement && videoThumbnailElement && videoTitleElement) {
-                    const playlistVideoSrc = sanitizeInput(videoSrcElement.value);
-                    const playlistVideoThumbnail = sanitizeInput(videoThumbnailElement.value);
-                    const playlistVideoTitle = sanitizeInput(videoTitleElement.value);
+            if (videoSrcElement && videoThumbnailElement && videoTitleElement) {
+              const playlistVideoSrc = sanitizeInput(videoSrcElement.value);
+              const playlistVideoThumbnail = sanitizeInput(videoThumbnailElement.value);
+              const playlistVideoTitle = sanitizeInput(videoTitleElement.value);
 
-                    if (playlistVideoSrc) {
-                        generatedCode += `                    { videoSrc: '${playlistVideoSrc}'`;
+              if (playlistVideoSrc) {
+                generatedCode += `                    { videoSrc: '${playlistVideoSrc}'`;
 
-                        if (playlistVideoThumbnail) {
-                            generatedCode += `, thumbnailSrc: '${playlistVideoThumbnail}'`;
-                        }
-                        if (playlistVideoTitle) {
-                            generatedCode += `, thumbnailTitle: '${playlistVideoTitle}'`;
-                        }
-
-                        if (item !== playlistItems[playlistItems.length - 1]) {
-                            generatedCode += ` },\n`;
-                        } else {
-                            generatedCode += ` }`;
-                        }
-                    }
+                if (playlistVideoThumbnail) {
+                  generatedCode += `, thumbnailSrc: '${playlistVideoThumbnail}'`;
                 }
-            });
+                if (playlistVideoTitle) {
+                  generatedCode += `, thumbnailTitle: '${playlistVideoTitle}'`;
+                }
 
-            generatedCode += `\n                ]`;
-            elementAdded = true;
+                if (item !== playlistItems[playlistItems.length - 1]) {
+                  generatedCode += ` },\n`;
+                } else {
+                  generatedCode += ` }`;
+                }
+              }
+            }
+          });
+
+          generatedCode += `\n                ]`;
+          elementAdded = true;
         }
 
-
         if (playlistAutoplay) {
-            generatedCode += elementAdded ? ',\n' : '\n';
-            generatedCode += `                playlistAutoplay: true`;
-            elementAdded = true;
+          generatedCode += elementAdded ? ',\n' : '\n';
+          generatedCode += `                playlistAutoplay: true`;
+          elementAdded = true;
         }
 
         if (playlistAutoTitles) {
-            generatedCode += elementAdded ? ',\n' : '\n';
-            generatedCode += `                playlistAutoTitles: true`;
-            elementAdded = true;
+          generatedCode += elementAdded ? ',\n' : '\n';
+          generatedCode += `                playlistAutoTitles: true`;
+          elementAdded = true;
         }
 
         if (toggleMiniDesktop) {
-            generatedCode += elementAdded ? ',\n' : '\n';
-            generatedCode += `                miniPlayer: [\n`;
-            generatedCode += `                    { showOnlyOnAds: ${showOnlyOnAdsDesktop}, width: '${widthDesktop}', position: '${positionDesktop}', spacing: ['${spacingXDesktop}', '${spacingYDesktop}'] }\n`;
-            generatedCode += `                ]`;
-            elementAdded = true;
+          generatedCode += elementAdded ? ',\n' : '\n';
+          generatedCode += `                miniPlayer: [\n`;
+          generatedCode += `                    { showOnlyOnAds: ${showOnlyOnAdsDesktop}, width: '${widthDesktop}', position: '${positionDesktop}', spacing: ['${spacingXDesktop}', '${spacingYDesktop}'] }\n`;
+          generatedCode += `                ]`;
+          elementAdded = true;
         }
 
         if (toggleMiniMobile) {
-            generatedCode += elementAdded ? ',\n' : '\n';
-            generatedCode += `                miniPlayerMobile: [\n`;
-            generatedCode += `                    { showOnlyOnAds: ${showOnlyOnAdsMobile}, width: '${widthMobile}', position: '${positionMobile}', spacing: ['${spacingXMobile}', '${spacingYMobile}'] }\n`;
-            generatedCode += `                ]`;
-            elementAdded = true;
+          generatedCode += elementAdded ? ',\n' : '\n';
+          generatedCode += `                miniPlayerMobile: [\n`;
+          generatedCode += `                    { showOnlyOnAds: ${showOnlyOnAdsMobile}, width: '${widthMobile}', position: '${positionMobile}', spacing: ['${spacingXMobile}', '${spacingYMobile}'] }\n`;
+          generatedCode += `                ]`;
+          elementAdded = true;
         }
 
         if (adTagUrl) {
-            generatedCode += elementAdded ? ',\n' : '\n';
-            generatedCode += `                adUnit: '${adTagUrl}'`;
-            elementAdded = true;
+          generatedCode += elementAdded ? ',\n' : '\n';
+          generatedCode += `                adUnit: '${adTagUrl}'`;
+          elementAdded = true;
         }
 
         if (overlayAdTagCode) {
-            generatedCode += elementAdded ? ',\n' : '\n';
-            generatedCode += `                overlayAdElement: ${overlayAdTagCode}`;
-            elementAdded = true;
+          generatedCode += elementAdded ? ',\n' : '\n';
+          generatedCode += `                overlayAdElement: ${overlayAdTagCode}`;
+          elementAdded = true;
         }
 
         if (!toggleWatermark) {
-            generatedCode += elementAdded ? ',\n' : '\n';
-            generatedCode += `                watermark: false`;
-            elementAdded = true;
+          generatedCode += elementAdded ? ',\n' : '\n';
+          generatedCode += `                watermark: false`;
+          elementAdded = true;
         } else {
-            if (watermarkUrl) {
-                generatedCode += elementAdded ? ',\n' : '\n';
-                generatedCode += `                watermark: '${watermarkUrl}'`;
-                elementAdded = true;
-            }
+          if (watermarkUrl) {
+            generatedCode += elementAdded ? ',\n' : '\n';
+            generatedCode += `                watermark: '${watermarkUrl}'`;
+            elementAdded = true;
+          }
         }
 
         if (debugging) {
-            generatedCode += elementAdded ? ',\n' : '\n';
-            generatedCode += `                debug: true`;
+          generatedCode += elementAdded ? ',\n' : '\n';
+          generatedCode += `                debug: true`;
         }
         generatedCode += `\n            }, '${videoContainerId}');\n`;
         generatedCode += `        });\n`;
         generatedCode += `    </` + `script>\n`;
         generatedCode += `</` + `div>\n`;
 
-        document.getElementById("outputBox").innerText = generatedCode;
-    }
+        document.getElementById('outputBox').innerText = generatedCode;
+      }
 
-    generateCode();
+      generateCode();
 
-    elements.forEach(function(element) {
-        element.addEventListener("input", generateCode);
-        if (element.type === "checkbox") {
-            element.addEventListener("change", generateCode);
+      elements.forEach(function (element) {
+        element.addEventListener('input', generateCode);
+        if (element.type === 'checkbox') {
+          element.addEventListener('change', generateCode);
         }
-    });
-</script>
+      });
+    </script>
 
-<!-- Field description hover -->
-<script>
-    $(document).ready(function() {
+    <!-- Field description hover -->
+    <script>
+      $(document).ready(function () {
         $('.info-icon').hover(
-            function() {
-                $(this).siblings('.info-description').show();
-            },
-            function() {
-                $(this).siblings('.info-description').hide();
-            }
+          function () {
+            $(this).siblings('.info-description').show();
+          },
+          function () {
+            $(this).siblings('.info-description').hide();
+          }
         );
-    });
-</script>
+      });
+    </script>
 
-<!-- Toggle additional field display based on checkbox status (playlist, both mini players) -->
-<script>
-    function toggleDisplay(checkboxId, targetClass) {
+    <!-- Toggle additional field display based on checkbox status (playlist, both mini players) -->
+    <script>
+      function toggleDisplay(checkboxId, targetClass) {
         const checkbox = document.getElementById(checkboxId);
-        const targetDiv = document.querySelector("." + targetClass);
+        const targetDiv = document.querySelector('.' + targetClass);
 
         if (checkbox.checked) {
-            targetDiv.style.display = "block";
+          targetDiv.style.display = 'block';
         } else {
-            targetDiv.style.display = "none";
+          targetDiv.style.display = 'none';
         }
-    }
-    console.log("toggle changes made");
-    toggleDisplay("togglePlaylist", "playlist");
-    toggleDisplay("toggleMiniDesktop", "miniDesktop");
-    toggleDisplay("toggleMiniMobile", "miniMobile");
-    toggleDisplay("toggleWatermark", "watermark");
+      }
+      console.log('toggle changes made');
+      toggleDisplay('togglePlaylist', 'playlist');
+      toggleDisplay('toggleMiniDesktop', 'miniDesktop');
+      toggleDisplay('toggleMiniMobile', 'miniMobile');
+      toggleDisplay('toggleWatermark', 'watermark');
 
+      togglePlaylist.addEventListener('change', function () {
+        toggleDisplay('togglePlaylist', 'playlist');
+      });
 
-    togglePlaylist.addEventListener("change", function() {
-        toggleDisplay("togglePlaylist", "playlist");
-    });
+      toggleMiniDesktop.addEventListener('change', function () {
+        toggleDisplay('toggleMiniDesktop', 'miniDesktop');
+      });
 
-    toggleMiniDesktop.addEventListener("change", function() {
-        toggleDisplay("toggleMiniDesktop", "miniDesktop");
-    });
+      toggleMiniMobile.addEventListener('change', function () {
+        toggleDisplay('toggleMiniMobile', 'miniMobile');
+      });
 
-    toggleMiniMobile.addEventListener("change", function() {
-        toggleDisplay("toggleMiniMobile", "miniMobile");
-    });
+      toggleWatermark.addEventListener('change', function () {
+        toggleDisplay('toggleWatermark', 'watermark');
+      });
+    </script>
 
-    toggleWatermark.addEventListener("change", function() {
-        toggleDisplay("toggleWatermark", "watermark");
-    });
-</script>
-
-<!-- Uncheck playlist attributes checkbox if playlist as a whole is unchecked -->
-<script>
-    function uncheckPlaylistAutoplay() {
+    <!-- Uncheck playlist attributes checkbox if playlist as a whole is unchecked -->
+    <script>
+      function uncheckPlaylistAutoplay() {
         if (!togglePlaylist.checked) {
-            playlistAutoplay.checked = false;
-            playlistAutoTitles.checked = false;
-            generateCode();
+          playlistAutoplay.checked = false;
+          playlistAutoTitles.checked = false;
+          generateCode();
         }
-    }
-    togglePlaylist.addEventListener("change", uncheckPlaylistAutoplay);
-    playlistAutoplay.addEventListener("change", function() { generateCode(); });
-    playlistAutoTitles.addEventListener("change", function() { generateCode(); });
-</script>
+      }
+      togglePlaylist.addEventListener('change', uncheckPlaylistAutoplay);
+      playlistAutoplay.addEventListener('change', function () {
+        generateCode();
+      });
+      playlistAutoTitles.addEventListener('change', function () {
+        generateCode();
+      });
+    </script>
 
-<!-- creation of additional playlist items -->
-<script>
-    let playlistItemCount = 1;
+    <!-- creation of additional playlist items -->
+    <script>
+      let playlistItemCount = 1;
 
-    function generateUniqueIds() {
+      function generateUniqueIds() {
         const uniqueId = `playlist-item-${playlistItemCount}`;
         playlistItemCount++;
         return uniqueId;
-    }
+      }
 
-    function createPlaylistItem() {
-        const playlistItemDiv = document.createElement("div");
-        playlistItemDiv.classList.add("col-12", "pt-2", "playlist-item");
+      function createPlaylistItem() {
+        const playlistItemDiv = document.createElement('div');
+        playlistItemDiv.classList.add('col-12', 'pt-2', 'playlist-item');
 
         const uniqueId = generateUniqueIds();
-        playlistItemDiv.setAttribute("id", uniqueId);
+        playlistItemDiv.setAttribute('id', uniqueId);
         playlistItemDiv.innerHTML = `
         <div class="col-12 pt-2 row">
             <div class="col-6">
@@ -744,134 +863,147 @@
         <div class="seperator my-3"></div>
     `;
 
-        const addButton = document.getElementById("addPlaylistItemBtn");
+        const addButton = document.getElementById('addPlaylistItemBtn');
 
         addButton.parentNode.insertBefore(playlistItemDiv, addButton);
 
-        const playlistItemInputs = playlistItemDiv.querySelectorAll(".generate-code");
-        playlistItemInputs.forEach(function(input) {
-            input.addEventListener("input", generateCode);
+        const playlistItemInputs = playlistItemDiv.querySelectorAll('.generate-code');
+        playlistItemInputs.forEach(function (input) {
+          input.addEventListener('input', generateCode);
         });
-    }
+      }
 
-    document.getElementById("addPlaylistItemBtn").addEventListener("click", function() {
+      document.getElementById('addPlaylistItemBtn').addEventListener('click', function () {
         if (playlistItemCount <= 9) {
-            createPlaylistItem();
+          createPlaylistItem();
         } else {
-            alert("I think that's enough.. Maximum limit reached for playlist items (10 items)");
+          alert("I think that's enough.. Maximum limit reached for playlist items (10 items)");
         }
-    });
+      });
 
-    createPlaylistItem();
+      createPlaylistItem();
+    </script>
 
-</script>
-
-<!-- Function to remove the last playlist item -->
-<script>
-    function removeLastPlaylistItem() {
-        const playlistItems = document.querySelectorAll(".playlist-item");
+    <!-- Function to remove the last playlist item -->
+    <script>
+      function removeLastPlaylistItem() {
+        const playlistItems = document.querySelectorAll('.playlist-item');
 
         if (playlistItems.length > 1) {
-            const lastPlaylistItem = playlistItems[playlistItems.length - 1];
+          const lastPlaylistItem = playlistItems[playlistItems.length - 1];
 
-            lastPlaylistItem.parentNode.removeChild(lastPlaylistItem);
+          lastPlaylistItem.parentNode.removeChild(lastPlaylistItem);
 
-            playlistItemCount--;
+          playlistItemCount--;
         } else {
-            alert("No playlist items to remove");
+          alert('No playlist items to remove');
         }
-    }
+      }
 
-    document.getElementById("removeLastPlaylistItemBtn").addEventListener("click", function() {
+      document.getElementById('removeLastPlaylistItemBtn').addEventListener('click', function () {
         removeLastPlaylistItem();
-    });
-</script>
+      });
+    </script>
 
-<!-- making some fields mandatory -->
-<script>
-    let elementIds = ['videoContainerId', 'videoSource'];
-    let desktopElementIds = ['widthDesktop', 'positionDesktop', 'spacingXDesktop', 'spacingYDesktop'];
-    let mobileElementIds = ['widthMobile', 'positionMobile', 'spacingXMobile', 'spacingYMobile'];
+    <!-- making some fields mandatory -->
+    <script>
+      let elementIds = ['videoContainerId', 'videoSource'];
+      let desktopElementIds = [
+        'widthDesktop',
+        'positionDesktop',
+        'spacingXDesktop',
+        'spacingYDesktop',
+      ];
+      let mobileElementIds = ['widthMobile', 'positionMobile', 'spacingXMobile', 'spacingYMobile'];
 
-    function attachValidationListeners() {
-        elementIds.forEach(id => {
-            const input = document.getElementById(id);
-            if (input) input.addEventListener('input', highlightUnfilledMandatoryFields);
+      function attachValidationListeners() {
+        elementIds.forEach((id) => {
+          const input = document.getElementById(id);
+          if (input) input.addEventListener('input', highlightUnfilledMandatoryFields);
         });
-    }
+      }
 
-    function handleCheckboxChange(checkboxId, relatedElementIds) {
+      function handleCheckboxChange(checkboxId, relatedElementIds) {
         const checkbox = document.getElementById(checkboxId);
-        if (checkbox && checkbox.checked) relatedElementIds.forEach(id => { if (!elementIds.includes(id)) elementIds.push(id); });
-        else relatedElementIds.forEach(id => { elementIds = elementIds.filter(elementId => elementId !== id); });
+        if (checkbox && checkbox.checked)
+          relatedElementIds.forEach((id) => {
+            if (!elementIds.includes(id)) elementIds.push(id);
+          });
+        else
+          relatedElementIds.forEach((id) => {
+            elementIds = elementIds.filter((elementId) => elementId !== id);
+          });
         attachValidationListeners();
-    }
+      }
 
-    function highlightUnfilledMandatoryFields() {
-        elementIds.forEach(id => {
-            const input = document.getElementById(id);
-            if (input) input.classList[input.value.trim() ? 'remove' : 'add']('is-invalid');
+      function highlightUnfilledMandatoryFields() {
+        elementIds.forEach((id) => {
+          const input = document.getElementById(id);
+          if (input) input.classList[input.value.trim() ? 'remove' : 'add']('is-invalid');
         });
-    }
+      }
 
-    document.getElementById("toggleMiniDesktop").addEventListener("change", function() {
+      document.getElementById('toggleMiniDesktop').addEventListener('change', function () {
         handleCheckboxChange('toggleMiniDesktop', desktopElementIds);
-    });
+      });
 
-    document.getElementById("toggleMiniMobile").addEventListener("change", function() {
+      document.getElementById('toggleMiniMobile').addEventListener('change', function () {
         handleCheckboxChange('toggleMiniMobile', mobileElementIds);
-    });
+      });
 
-    document.getElementById("toggleWatermark").addEventListener("change", function() {
+      document.getElementById('toggleWatermark').addEventListener('change', function () {
         handleCheckboxChange('toggleWatermark', watermarks);
-    });
+      });
 
-    const outputBox = document.getElementById('outputBox');
-    if (outputBox) {
-        outputBox.addEventListener('click', function() {
-            let unfilled = false;
-            elementIds.forEach(id => {
-                const input = document.getElementById(id);
-                if (input && !input.value.trim()) unfilled = true;
-            });
-            if (unfilled) {
-                highlightUnfilledMandatoryFields();
-                outputBox.blur();
-                alert('Please fill in all mandatory fields before generating code.');
-            }
+      const outputBox = document.getElementById('outputBox');
+      if (outputBox) {
+        outputBox.addEventListener('click', function () {
+          let unfilled = false;
+          elementIds.forEach((id) => {
+            const input = document.getElementById(id);
+            if (input && !input.value.trim()) unfilled = true;
+          });
+          if (unfilled) {
+            highlightUnfilledMandatoryFields();
+            outputBox.blur();
+            alert('Please fill in all mandatory fields before generating code.');
+          }
         });
-    }
+      }
 
-    document.addEventListener('DOMContentLoaded', attachValidationListeners);
-</script>
+      document.addEventListener('DOMContentLoaded', attachValidationListeners);
+    </script>
 
-<!-- hide video title elements if they are being autogenerated -->
-<script>
-    function addDNoneClassToElements() {
-        const c = document.getElementById("playlistAutoTitles");
+    <!-- hide video title elements if they are being autogenerated -->
+    <script>
+      function addDNoneClassToElements() {
+        const c = document.getElementById('playlistAutoTitles');
         if (c.checked) {
-            document.querySelectorAll('.playlist-item > div:nth-child(2)').forEach(e => e.classList.add('d-none'));
+          document
+            .querySelectorAll('.playlist-item > div:nth-child(2)')
+            .forEach((e) => e.classList.add('d-none'));
         }
-    }
+      }
 
-    const c = document.getElementById("playlistAutoTitles");
-    const b = document.getElementById("addPlaylistItemBtn");
+      const c = document.getElementById('playlistAutoTitles');
+      const b = document.getElementById('addPlaylistItemBtn');
 
-    c.addEventListener("change", () => {
+      c.addEventListener('change', () => {
         const p = document.querySelectorAll('.playlist-item > div:nth-child(2)');
-        c.checked ? p.forEach(e => e.classList.add('d-none')) : p.forEach(e => e.classList.remove('d-none'));
-    });
+        c.checked
+          ? p.forEach((e) => e.classList.add('d-none'))
+          : p.forEach((e) => e.classList.remove('d-none'));
+      });
 
-    b.addEventListener("click", addDNoneClassToElements);
-    addDNoneClassToElements();
-</script>
+      b.addEventListener('click', addDNoneClassToElements);
+      addDNoneClassToElements();
+    </script>
 
-<!-- set placeholder for overlay ad field -->
-<script>
-    var placeholderContent = '<div id="my-ad">\n    <script>\n        googletag.cmd.push(function() { googletag.display("my-ad"); });\n    <\/script>\n<\/div>\n';
-    document.getElementById('overlayAdTagCode').setAttribute('placeholder', placeholderContent);
-</script>
-
-
-</body>
+    <!-- set placeholder for overlay ad field -->
+    <script>
+      var placeholderContent =
+        '<div id="my-ad">\n    <script>\n        googletag.cmd.push(function() { googletag.display("my-ad"); });\n    <\/script>\n<\/div>\n';
+      document.getElementById('overlayAdTagCode').setAttribute('placeholder', placeholderContent);
+    </script>
+  </body>
 </html>
