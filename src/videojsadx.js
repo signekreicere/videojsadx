@@ -468,6 +468,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
             } else {
               showMiniPlayer();
             }
+            resumeContentAfterAd();
           } else if (event.type == google.ima.AdEvent.Type.ALL_ADS_COMPLETED) {
             adPausedByMiniPlayerClose = false;
             adPausedByVisibility = false;
@@ -643,6 +644,28 @@ import stpdLogoImage from './assets/setupad-short.svg';
           if (adsManager && typeof adsManager.resume === 'function') {
             adsManager.resume();
           }
+        }
+      }
+
+      function resumeContentAfterAd() {
+        if (!player || typeof player.play !== 'function' || !videoContainer) {
+          return;
+        }
+        if (!initialAutoplay || playerManuallyPaused || adBreakActive) {
+          return;
+        }
+        if (isElementOutOfView(videoContainer) || !player.paused()) {
+          return;
+        }
+        const playPromise = player.play();
+        if (playPromise && typeof playPromise.then === 'function') {
+          playPromise
+            .then(() => {
+              playerPaused = false;
+            })
+            .catch(() => {
+              playerPaused = true;
+            });
         }
       }
 
