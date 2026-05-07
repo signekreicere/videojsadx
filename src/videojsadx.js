@@ -110,6 +110,8 @@ import stpdLogoImage from './assets/setupad-short.svg';
       let videoEnded = false;
       let miniPlayerClosed;
       let miniPlayerCloseAfterAd = false;
+      let adPausedByMiniPlayerClose = false;
+      let adPausedByVisibility = false;
       let playerPaused = false;
       let playerManuallyPaused = false;
       let unmutedOnce = false;
@@ -456,6 +458,8 @@ import stpdLogoImage from './assets/setupad-short.svg';
             }
           } else if (event.type == google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED) {
             adBreakActive = false;
+            adPausedByMiniPlayerClose = false;
+            adPausedByVisibility = false;
             if (overlayAdElement) {
               overlayAd.classList.remove('overlay-ad-hidden');
             }
@@ -465,6 +469,8 @@ import stpdLogoImage from './assets/setupad-short.svg';
               showMiniPlayer();
             }
           } else if (event.type == google.ima.AdEvent.Type.ALL_ADS_COMPLETED) {
+            adPausedByMiniPlayerClose = false;
+            adPausedByVisibility = false;
             autoplayPlaylist(player);
           } else {
             if (debug) {
@@ -569,6 +575,17 @@ import stpdLogoImage from './assets/setupad-short.svg';
         if (!player || typeof player.pause !== 'function') {
           return;
         }
+        if (adBreakActive && miniPlayerClosed) {
+          if (isElementOutOfView(videoContainer)) {
+            if (!adPausedByVisibility) {
+              pauseAdPlayback();
+              adPausedByVisibility = true;
+            }
+          } else if (adPausedByVisibility) {
+            resumeAdPlayback();
+            adPausedByVisibility = false;
+          }
+        }
         if (
           (isElementOutOfView(videoContainer) &&
             (miniPlayer.length <= 0 || miniPlayerClosed) &&
@@ -609,6 +626,22 @@ import stpdLogoImage from './assets/setupad-short.svg';
           const adsManager = player.ima.getAdsManager();
           if (adsManager && typeof adsManager.pause === 'function') {
             adsManager.pause();
+          }
+        }
+      }
+
+      function resumeAdPlayback() {
+        if (!player || !player.ima) {
+          return;
+        }
+        if (typeof player.ima.resumeAd === 'function') {
+          player.ima.resumeAd();
+          return;
+        }
+        if (typeof player.ima.getAdsManager === 'function') {
+          const adsManager = player.ima.getAdsManager();
+          if (adsManager && typeof adsManager.resume === 'function') {
+            adsManager.resume();
           }
         }
       }
@@ -686,6 +719,15 @@ import stpdLogoImage from './assets/setupad-short.svg';
           }
           clearMiniPlayerPositioning();
         }
+
+        if (
+          adBreakActive &&
+          adPausedByMiniPlayerClose &&
+          !isElementOutOfView(videoContainer)
+        ) {
+          resumeAdPlayback();
+          adPausedByMiniPlayerClose = false;
+        }
       }
 
       // Mini player: Set position based on configs
@@ -751,6 +793,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
         clearMiniPlayerPositioning();
         if (adBreakActive) {
           pauseAdPlayback();
+          adPausedByMiniPlayerClose = true;
         }
         if (player && typeof player.pause === 'function') {
           player.pause();
