@@ -22,7 +22,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
       thumbnailSrc: '',
       thumbnailTitle: '',
       initialAutoplay: false,
-      muted: false,
+      muted: true,
       playlist: [],
       playlistAutoTitles: false,
       playlistAutoplay: false,
@@ -161,7 +161,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
                                 <line x1="15" y1="0" x2="0" y2="15" stroke="white" stroke-width="3"/>
                             </svg>
                         </div>
-                        <video id="${'video_' + iterationId}" class="video-js vjs-default-skin vjs-16-9" controls preload="auto" muted`;
+                        <video id="${'video_' + iterationId}" class="video-js vjs-default-skin vjs-16-9" controls preload="auto"`;
           if (muted) {
             htmlContent += ` muted`;
           }
@@ -369,10 +369,11 @@ import stpdLogoImage from './assets/setupad-short.svg';
 
         player.ima(options);
 
-        if (player.muted()) {
-          player.ima.controller.settings.adsWillPlayMuted = true;
-        } else {
-          player.ima.controller.settings.adsWillPlayMuted = false;
+        player.on('volumechange', syncAdVolume);
+        syncAdVolume();
+        if (player.ima.controller && player.ima.controller.settings) {
+          player.ima.controller.settings.adsWillPlayMuted =
+            player.muted() || player.volume() === 0;
         }
 
         function initFromStart(player) {
@@ -389,6 +390,12 @@ import stpdLogoImage from './assets/setupad-short.svg';
 
         // Gathering ad events
         function adsManagerLoadedCallback(player) {
+          var volumeChangedType =
+            google &&
+            google.ima &&
+            google.ima.AdEvent &&
+            google.ima.AdEvent.Type &&
+            google.ima.AdEvent.Type.VOLUME_CHANGED;
           var events = [
             google.ima.AdEvent.Type.ALL_ADS_COMPLETED,
             google.ima.AdEvent.Type.CLICK,
@@ -404,10 +411,15 @@ import stpdLogoImage from './assets/setupad-short.svg';
             google.ima.AdEvent.Type.SKIPPED,
             google.ima.AdEvent.Type.SKIPPABLE_STATE_CHANGED,
           ];
+          if (volumeChangedType) {
+            events.push(volumeChangedType);
+          }
 
           for (var index = 0; index < events.length; index++) {
             player.ima.addEventListener(events[index], onAdEvent.bind(null));
           }
+
+          syncAdVolume();
 
           if (playlistItemClicked) {
             player.play();
@@ -419,6 +431,16 @@ import stpdLogoImage from './assets/setupad-short.svg';
 
         // Checking if ad is playing + logging ad events
         function onAdEvent(event) {
+          if (
+            google &&
+            google.ima &&
+            google.ima.AdEvent &&
+            google.ima.AdEvent.Type &&
+            event.type == google.ima.AdEvent.Type.VOLUME_CHANGED
+          ) {
+            syncAdVolume();
+            return;
+          }
           if (event.type == google.ima.AdEvent.Type.SKIPPED) {
             if (debug) {
               console.log(containerId + ': Ad skipped');
@@ -461,10 +483,9 @@ import stpdLogoImage from './assets/setupad-short.svg';
             player.ima.setContentWithAdTag(null);
 
             var adTagUrl = options.adTagUrl;
-            if (player.muted()) {
-              player.ima.controller.settings.adsWillPlayMuted = true;
-            } else {
-              player.ima.controller.settings.adsWillPlayMuted = false;
+            if (player.ima.controller && player.ima.controller.settings) {
+              player.ima.controller.settings.adsWillPlayMuted =
+                player.muted() || player.volume() === 0;
             }
 
             player.ima.requestAds();
@@ -536,12 +557,10 @@ import stpdLogoImage from './assets/setupad-short.svg';
         if (!player || typeof player.muted !== 'function') {
           return;
         }
-        if (!unmutedOnce && !muted) {
+        if (!unmutedOnce && !muted && player.muted()) {
           unmutedOnce = true;
           player.muted(false);
-
-          player.ima.controller.settings.adsWillPlayMuted = false;
-          player.ima.getAdsManager().setVolume(1);
+          syncAdVolume();
         }
       }
 
@@ -568,12 +587,50 @@ import stpdLogoImage from './assets/setupad-short.svg';
             playerPaused = true;
           }
         } else {
-          if (playerPaused) {
+          if (playerPaused && !adBreakActive) {
             if (debug) {
               console.log(containerId + ': Playing video player');
             }
             player.play();
             playerPaused = false;
+          }
+        }
+      }
+
+      function pauseAdPlayback() {
+        if (!player || !player.ima) {
+          return;
+        }
+        if (typeof player.ima.pauseAd === 'function') {
+          player.ima.pauseAd();
+          return;
+        }
+        if (typeof player.ima.getAdsManager === 'function') {
+          const adsManager = player.ima.getAdsManager();
+          if (adsManager && typeof adsManager.pause === 'function') {
+            adsManager.pause();
+          }
+        }
+      }
+
+      function syncAdVolume() {
+        if (
+          !player ||
+          !player.ima ||
+          typeof player.muted !== 'function' ||
+          typeof player.volume !== 'function'
+        ) {
+          return;
+        }
+        const volume = player.volume();
+        const isMuted = player.muted() || volume === 0;
+        if (player.ima.controller && player.ima.controller.settings) {
+          player.ima.controller.settings.adsWillPlayMuted = isMuted;
+        }
+        if (typeof player.ima.getAdsManager === 'function') {
+          const adsManager = player.ima.getAdsManager();
+          if (adsManager && typeof adsManager.setVolume === 'function') {
+            adsManager.setVolume(isMuted ? 0 : volume);
           }
         }
       }
@@ -692,7 +749,12 @@ import stpdLogoImage from './assets/setupad-short.svg';
         videoElementContainer.classList.remove('stpd-video-fixed');
         closeBtn.classList.add('close-btn-hidden');
         clearMiniPlayerPositioning();
-        player.pause();
+        if (adBreakActive) {
+          pauseAdPlayback();
+        }
+        if (player && typeof player.pause === 'function') {
+          player.pause();
+        }
         miniPlayerClosed = true;
         miniPlayerCloseAfterAd = true;
       }
@@ -927,10 +989,9 @@ import stpdLogoImage from './assets/setupad-short.svg';
           player.ima.setContentWithAdTag(null);
 
           var adTagUrl = options.adTagUrl;
-          if (player.muted()) {
-            player.ima.controller.settings.adsWillPlayMuted = true;
-          } else {
-            player.ima.controller.settings.adsWillPlayMuted = false;
+          if (player.ima.controller && player.ima.controller.settings) {
+            player.ima.controller.settings.adsWillPlayMuted =
+              player.muted() || player.volume() === 0;
           }
 
           player.ima.requestAds();
