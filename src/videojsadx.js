@@ -533,6 +533,9 @@ import stpdLogoImage from './assets/setupad-short.svg';
 
       // Global: Unmute video player on click
       function unmuteOnClick() {
+        if (!player || typeof player.muted !== 'function') {
+          return;
+        }
         if (!unmutedOnce && !muted) {
           unmutedOnce = true;
           player.muted(false);
@@ -544,6 +547,9 @@ import stpdLogoImage from './assets/setupad-short.svg';
 
       // Global: Pause video if player out of view
       function pausePlayer() {
+        if (!player || typeof player.pause !== 'function') {
+          return;
+        }
         if (
           (isElementOutOfView(videoContainer) &&
             (miniPlayer.length <= 0 || miniPlayerClosed) &&
@@ -590,6 +596,9 @@ import stpdLogoImage from './assets/setupad-short.svg';
 
       // Mini player: Show miniPlayer setting is configured + check of when to show it
       function showMiniPlayer() {
+        if (!player || typeof player.paused !== 'function' || !videoElementContainer) {
+          return;
+        }
         let shouldShowMiniPlayer =
           (playerBeenInView &&
             ((initialAutoplay && !player.paused()) || !player.paused() || adBreakActive) &&
