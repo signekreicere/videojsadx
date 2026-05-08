@@ -287,6 +287,8 @@ import stpdLogoImage from './assets/setupad-short.svg';
             handlePlayerInteractions();
           });
 
+          player.on('fullscreenchange', handleFullscreenChange);
+
           player.src({
             type: 'video/mp4',
             src: videoSrc,
@@ -755,7 +757,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
         }
       }
 
-      function resizeImaToContainer() {
+      function resizeImaToContainer(viewMode) {
         if (!adBreakActive || !videoElementContainer) {
           return;
         }
@@ -775,7 +777,35 @@ import stpdLogoImage from './assets/setupad-short.svg';
         if (width <= 0 || height <= 0) {
           return;
         }
-        adsManager.resize(width, height, google.ima.ViewMode.NORMAL);
+        const resolvedViewMode = viewMode || getImaViewMode() || google.ima.ViewMode.NORMAL;
+        adsManager.resize(width, height, resolvedViewMode);
+      }
+
+      function getImaViewMode() {
+        if (typeof google === 'undefined' || !google.ima || !google.ima.ViewMode) {
+          return null;
+        }
+        let isFullscreen = false;
+        if (player && typeof player.isFullscreen === 'function') {
+          isFullscreen = player.isFullscreen();
+        } else {
+          const playerElement = player && typeof player.el === 'function' ? player.el() : null;
+          if (playerElement && playerElement.classList.contains('vjs-fullscreen')) {
+            isFullscreen = true;
+          } else {
+            isFullscreen = Boolean(
+              document.fullscreenElement ||
+                document.webkitFullscreenElement ||
+                document.mozFullScreenElement ||
+                document.msFullscreenElement
+            );
+          }
+        }
+        return isFullscreen ? google.ima.ViewMode.FULLSCREEN : google.ima.ViewMode.NORMAL;
+      }
+
+      function handleFullscreenChange() {
+        resizeImaToContainer(getImaViewMode());
       }
 
       // Mini player: Set position based on configs
@@ -1148,6 +1178,10 @@ import stpdLogoImage from './assets/setupad-short.svg';
       window.addEventListener('scroll', () => {
         (showMiniPlayer(), pausePlayer());
       });
+      document.addEventListener('fullscreenchange', handleFullscreenChange);
+      document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.addEventListener('MSFullscreenChange', handleFullscreenChange);
       window.addEventListener('click', () => {
         unmuteOnClick();
       });
