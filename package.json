@@ -1,11 +1,12 @@
 {
   "name": "videojsadx",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "Adx ads integration for VideoJS",
   "main": "src/videojsadx.js",
   "scripts": {
     "dev": "webpack --mode development",
     "build": "webpack --mode production",
+    "prepublishOnly": "npm run build",
     "format": "prettier --write \"src/**/*.{js,css,scss}\" \"test/**/*.{js,css,scss,html}\" \"webpack.config.js\" \"README.md\" \"INTERNAL.md\"",
     "start": "webpack serve --mode development",
     "start:docker": "docker compose up --build -d && open http://localhost:8080/videojsadx.html",
