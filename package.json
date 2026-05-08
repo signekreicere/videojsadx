@@ -22,7 +22,9 @@
     "adx"
   ],
   "author": "SIA Setupad, Signe Kreicere <signe.kreicere@gmail.com>",
-  "contributors": ["Edijs Belasovs <edijins2001@gmail.com>"],
+  "contributors": [
+    "Edijs Belasovs <edijins2001@gmail.com>"
+  ],
   "license": "ISC",
   "files": [
     "dist",
@@ -57,7 +59,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/signekreicere/videojsadx"
+    "url": "git+https://github.com/signekreicere/videojsadx.git"
   },
   "bugs": {
     "url": "https://github.com/signekreicere/videojsadx/issues"
