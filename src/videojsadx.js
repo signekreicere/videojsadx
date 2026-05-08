@@ -733,6 +733,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
             overlayAd.classList.add('overlay-ad-hidden');
           }
           miniPlayerPositioning();
+          resizeImaToContainer();
         } else {
           videoPlaceholder.classList.add('d-none');
           videoElementContainer.classList.remove('stpd-video-fixed');
@@ -741,6 +742,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
             overlayAd.classList.remove('overlay-ad-hidden');
           }
           clearMiniPlayerPositioning();
+          resizeImaToContainer();
         }
 
         if (
@@ -751,6 +753,29 @@ import stpdLogoImage from './assets/setupad-short.svg';
           resumeAdPlayback();
           adPausedByMiniPlayerClose = false;
         }
+      }
+
+      function resizeImaToContainer() {
+        if (!adBreakActive || !videoElementContainer) {
+          return;
+        }
+        if (!player || !player.ima || typeof player.ima.getAdsManager !== 'function') {
+          return;
+        }
+        if (typeof google === 'undefined' || !google.ima || !google.ima.ViewMode) {
+          return;
+        }
+        const adsManager = player.ima.getAdsManager();
+        if (!adsManager || typeof adsManager.resize !== 'function') {
+          return;
+        }
+        const rect = videoElementContainer.getBoundingClientRect();
+        const width = Math.round(rect.width);
+        const height = Math.round(rect.height);
+        if (width <= 0 || height <= 0) {
+          return;
+        }
+        adsManager.resize(width, height, google.ima.ViewMode.NORMAL);
       }
 
       // Mini player: Set position based on configs
