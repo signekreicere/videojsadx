@@ -1,6 +1,6 @@
 {
   "name": "videojsadx",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "Adx ads integration for VideoJS",
   "main": "src/videojsadx.js",
   "scripts": {
