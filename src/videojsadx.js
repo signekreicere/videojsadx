@@ -116,6 +116,8 @@ import stpdLogoImage from './assets/setupad-short.svg';
       let playerManuallyPaused = false;
       let unmutedOnce = false;
       let autoplayPending = initialAutoplay;
+      let pendingAdRequest = false;
+      let pendingAdAutoplay = false;
 
       // Defining elements
       let videoElementContainer;
@@ -390,6 +392,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
         function init(player) {
           initialized = true;
           player.ima.initializeAdDisplayContainer();
+          maybeRequestAds();
         }
 
         // Gathering ad events
@@ -485,6 +488,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
         // Playlist: Request ads on video change + force play video with playlistItemClicked
         function onPlaylistItemClick(player, event) {
           if (!adBreakActive) {
+            playlistItemClicked = true;
             if (!initialized) {
               init(player);
             }
@@ -497,13 +501,17 @@ import stpdLogoImage from './assets/setupad-short.svg';
                 player.muted() || player.volume() === 0;
             }
 
+            if (!isElementViewable(getViewabilityElement(), 0.5)) {
+              queueAdRequest(false);
+              return;
+            }
+
             player.ima.requestAds();
           } else {
             if (debug) {
               console.log(containerId + ': Change video: Wait for Ad to finish.');
             }
           }
-          playlistItemClicked = true;
         }
       }
 
@@ -514,6 +522,69 @@ import stpdLogoImage from './assets/setupad-short.svg';
           rect.bottom <= 0 ||
           rect.top >= (window.innerHeight || document.documentElement.clientHeight)
         );
+      }
+
+      function getViewabilityElement() {
+        if (videoElementContainer && videoElementContainer.classList.contains('stpd-video-fixed')) {
+          return videoElementContainer;
+        }
+        return videoContainer || videoElementContainer;
+      }
+
+      function getElementViewRatio(el) {
+        if (!el) {
+          return 0;
+        }
+        const rect = el.getBoundingClientRect();
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+        if (rect.width <= 0 || rect.height <= 0) {
+          return 0;
+        }
+        const visibleWidth = Math.max(
+          0,
+          Math.min(rect.right, viewportWidth) - Math.max(rect.left, 0)
+        );
+        const visibleHeight = Math.max(
+          0,
+          Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0)
+        );
+        const visibleArea = visibleWidth * visibleHeight;
+        const totalArea = rect.width * rect.height;
+        return totalArea > 0 ? visibleArea / totalArea : 0;
+      }
+
+      function isElementViewable(el, threshold) {
+        return getElementViewRatio(el) >= threshold;
+      }
+
+      function queueAdRequest(autoplay) {
+        pendingAdRequest = true;
+        pendingAdAutoplay = Boolean(autoplay);
+      }
+
+      function maybeRequestAds() {
+        if (!pendingAdRequest || adBreakActive) {
+          return;
+        }
+        if (!initialized || !isElementViewable(getViewabilityElement(), 0.5)) {
+          return;
+        }
+        if (!player || !player.ima || typeof player.ima.requestAds !== 'function') {
+          return;
+        }
+        if (player.ima.controller && player.ima.controller.settings) {
+          player.ima.controller.settings.adsWillPlayMuted =
+            player.muted() || player.volume() === 0;
+        }
+        player.ima.requestAds();
+        pendingAdRequest = false;
+        if (pendingAdAutoplay) {
+          pendingAdAutoplay = false;
+          safePlay(false);
+        } else {
+          pendingAdAutoplay = false;
+        }
       }
 
       function safePlay(allowRetry) {
@@ -538,15 +609,21 @@ import stpdLogoImage from './assets/setupad-short.svg';
       }
 
       function attemptAutoplayInView() {
-        if (!autoplayPending || !player || typeof player.play !== 'function' || !videoContainer) {
+        if (!autoplayPending || !player || typeof player.play !== 'function') {
           return;
         }
-        if (isElementOutOfView(videoContainer)) {
+        const viewabilityElement = getViewabilityElement();
+        if (!viewabilityElement || isElementOutOfView(viewabilityElement)) {
           return;
         }
         autoplayPending = false;
+        maybeRequestAds();
+        if (pendingAdRequest) {
+          return;
+        }
         safePlay(true);
       }
+      
 
       // Global: Check if big player has been in view
       function playerBeenInViewCheck(el) {
@@ -617,8 +694,9 @@ import stpdLogoImage from './assets/setupad-short.svg';
           return;
         }
         attemptAutoplayInView();
-        if (adBreakActive && miniPlayerClosed) {
-          if (isElementOutOfView(videoContainer)) {
+        const isViewable = isElementViewable(getViewabilityElement(), 0.5);
+        if (adBreakActive) {
+          if (!isViewable) {
             if (!adPausedByVisibility) {
               pauseAdPlayback();
               adPausedByVisibility = true;
@@ -627,6 +705,9 @@ import stpdLogoImage from './assets/setupad-short.svg';
             resumeAdPlayback();
             adPausedByVisibility = false;
           }
+        }
+        if (isViewable) {
+          maybeRequestAds();
         }
         if (
           (isElementOutOfView(videoContainer) &&
@@ -697,13 +778,14 @@ import stpdLogoImage from './assets/setupad-short.svg';
       }
 
       function resumeContentAfterAd() {
-        if (!player || typeof player.play !== 'function' || !videoContainer) {
+        if (!player || typeof player.play !== 'function') {
           return;
         }
         if (!initialAutoplay || playerManuallyPaused || adBreakActive) {
           return;
         }
-        if (isElementOutOfView(videoContainer) || !player.paused()) {
+        const viewabilityElement = getViewabilityElement();
+        if (!viewabilityElement || isElementOutOfView(viewabilityElement) || !player.paused()) {
           return;
         }
         const playPromise = player.play();
@@ -1156,6 +1238,12 @@ import stpdLogoImage from './assets/setupad-short.svg';
           if (player.ima.controller && player.ima.controller.settings) {
             player.ima.controller.settings.adsWillPlayMuted =
               player.muted() || player.volume() === 0;
+          }
+
+          if (!isElementViewable(getViewabilityElement(), 0.5)) {
+            queueAdRequest(true);
+            videoEnded = false;
+            return;
           }
 
           player.ima.requestAds();
