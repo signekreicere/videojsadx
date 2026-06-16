@@ -71,9 +71,33 @@ function shouldResumeAutoPausedAd({ autoPaused, adManuallyPaused, playerManually
   return Boolean(autoPaused && !adManuallyPaused && !playerManuallyPaused);
 }
 
+function isAutoplayPolicyEligible({ isMuted, hasUserActivation }) {
+  return Boolean(isMuted || hasUserActivation);
+}
+
+function canRequestAdsNow({
+  pendingAdRequest,
+  adBreakActive,
+  initialized,
+  isPlayerViewable,
+  initDelayElapsed,
+  playbackPolicyEligible,
+}) {
+  return Boolean(
+    pendingAdRequest &&
+      !adBreakActive &&
+      initialized &&
+      isPlayerViewable &&
+      initDelayElapsed &&
+      playbackPolicyEligible
+  );
+}
+
 module.exports = {
   MIN_VIEWABILITY_THRESHOLD,
+  canRequestAdsNow,
   canAttemptAutoplayInView,
+  isAutoplayPolicyEligible,
   isPageFocused,
   isPageVisible,
   isPlaybackAllowed,

@@ -3,7 +3,9 @@ const assert = require('node:assert/strict');
 
 const {
   MIN_VIEWABILITY_THRESHOLD,
+  canRequestAdsNow,
   canAttemptAutoplayInView,
+  isAutoplayPolicyEligible,
   isPageFocused,
   isPageVisible,
   isPlaybackAllowed,
@@ -138,6 +140,70 @@ test('manual ad pause blocks automatic ad resume', () => {
       autoPaused: true,
       adManuallyPaused: false,
       playerManuallyPaused: true,
+    }),
+    false
+  );
+});
+
+test('isAutoplayPolicyEligible allows muted or activated playback', () => {
+  assert.equal(
+    isAutoplayPolicyEligible({
+      isMuted: true,
+      hasUserActivation: false,
+    }),
+    true
+  );
+
+  assert.equal(
+    isAutoplayPolicyEligible({
+      isMuted: false,
+      hasUserActivation: true,
+    }),
+    true
+  );
+
+  assert.equal(
+    isAutoplayPolicyEligible({
+      isMuted: false,
+      hasUserActivation: false,
+    }),
+    false
+  );
+});
+
+test('canRequestAdsNow requires all eligibility gates', () => {
+  assert.equal(
+    canRequestAdsNow({
+      pendingAdRequest: true,
+      adBreakActive: false,
+      initialized: true,
+      isPlayerViewable: true,
+      initDelayElapsed: true,
+      playbackPolicyEligible: true,
+    }),
+    true
+  );
+
+  assert.equal(
+    canRequestAdsNow({
+      pendingAdRequest: true,
+      adBreakActive: false,
+      initialized: true,
+      isPlayerViewable: true,
+      initDelayElapsed: false,
+      playbackPolicyEligible: true,
+    }),
+    false
+  );
+
+  assert.equal(
+    canRequestAdsNow({
+      pendingAdRequest: false,
+      adBreakActive: false,
+      initialized: true,
+      isPlayerViewable: true,
+      initDelayElapsed: true,
+      playbackPolicyEligible: true,
     }),
     false
   );

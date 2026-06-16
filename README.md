@@ -137,6 +137,14 @@ Parameter description:
   - Used for ad request/resume and pause logic.
   - Default: `0.7`.
   - Values outside range are clamped (`<0` becomes `0`, `>1` becomes `1`).
+- `adDisplayInitMinDelayMs:`
+  - Minimum delay in milliseconds between `initializeAdDisplayContainer()` and `requestAds()`.
+  - Helps avoid IMA timing warnings around ad container initialization.
+  - Default: `300`.
+- `enforceAdPlayEligibility:`
+  - If `true`, ads are requested only when playback is currently eligible by browser policy.
+  - Eligibility requires either muted playback or prior user activation.
+  - Default: `true`.
 - `overlayAdElement:`
   - Overlay Ad tag code (with divs and stuff). (!NB <body> code only. If this is not an independent code, all <head> calls need to be added manually)
 - `watermark:`

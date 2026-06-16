@@ -16,14 +16,23 @@ import adPlaybackUtils from './utils/adPlaybackUtils.cjs';
 import domViewability from './utils/domViewability.cjs';
 import manualPauseState from './utils/manualPauseState.cjs';
 import playbackVisibility from './utils/playbackVisibility.cjs';
+import userActivationUtils from './utils/userActivation.cjs';
 
 const { pauseAdPlayback, resumeAdPlayback, syncAdVolume } = adPlaybackUtils;
 const { isElementOutOfView, isElementViewable } = domViewability;
 const { syncManualPauseFlags } = manualPauseState;
+const {
+  FALLBACK_USER_ACTIVATION_EVENT_TYPES,
+  hasUserActivationState,
+  isFallbackUserActivationEvent,
+  shouldTrackFallbackActivation,
+} = userActivationUtils;
 
 const {
   MIN_VIEWABILITY_THRESHOLD,
+  canRequestAdsNow,
   canAttemptAutoplayInView,
+  isAutoplayPolicyEligible,
   isPlaybackAllowed,
   resolveViewabilityThreshold,
   shouldAutoplayAfterQueuedAd,
@@ -50,6 +59,8 @@ const {
       adUnit: '',
       overlayAdElement: '',
       viewabilityThreshold: MIN_VIEWABILITY_THRESHOLD,
+      adDisplayInitMinDelayMs: 300,
+      enforceAdPlayEligibility: true,
       debug: false,
       watermark: true,
     };
@@ -80,6 +91,10 @@ const {
       let adUnit = config.adUnit;
       let overlayAdElement = config.overlayAdElement;
       let viewabilityThreshold = resolveViewabilityThreshold(config.viewabilityThreshold);
+      let adDisplayInitMinDelayMs = Number.isFinite(config.adDisplayInitMinDelayMs)
+        ? Math.max(config.adDisplayInitMinDelayMs, 0)
+        : defaultConfig.adDisplayInitMinDelayMs;
+      let enforceAdPlayEligibility = config.enforceAdPlayEligibility !== false;
       let debug = config.debug;
       let watermark = config.watermark;
       // Defining user configs: mini player
@@ -141,6 +156,18 @@ const {
       let autoplayPending = initialAutoplay;
       let pendingAdRequest = false;
       let pendingAdAutoplay = false;
+      let adDisplayContainerInitializedAt = 0;
+      let lastUserActivationAt = 0;
+      let requestAdsRetryTimeoutId = null;
+      let initAdsFromPageInteraction = null;
+      const activationEnvironment = {
+        navigatorObj: typeof navigator !== 'undefined' ? navigator : null,
+        documentObj: typeof document !== 'undefined' ? document : null,
+      };
+      const useFallbackActivationTracking = shouldTrackFallbackActivation(activationEnvironment);
+      const userActivationEventTypes = useFallbackActivationTracking
+        ? FALLBACK_USER_ACTIVATION_EVENT_TYPES
+        : ['click', 'keydown'];
 
       // Defining elements
       let videoElementContainer;
@@ -157,6 +184,75 @@ const {
       let overlayAdCloseBtn;
       let videoPlaceholder;
       let stpdLogo;
+
+      function markUserActivation(event) {
+        if (!useFallbackActivationTracking) {
+          return;
+        }
+
+        if (event && !isFallbackUserActivationEvent(event)) {
+          return;
+        }
+
+        lastUserActivationAt = Date.now();
+      }
+
+      function hasUserActivation() {
+        return hasUserActivationState({
+          navigatorObj: activationEnvironment.navigatorObj,
+          documentObj: activationEnvironment.documentObj,
+          lastUserActivationAt,
+        });
+      }
+
+      function isPlayerMuted() {
+        if (!player || typeof player.muted !== 'function' || typeof player.volume !== 'function') {
+          return Boolean(muted);
+        }
+
+        return player.muted() || player.volume() === 0;
+      }
+
+      function syncAdsWillPlayMutedSetting() {
+        if (!player || !player.ima || !player.ima.controller || !player.ima.controller.settings) {
+          return;
+        }
+
+        player.ima.controller.settings.adsWillPlayMuted = isPlayerMuted();
+      }
+
+      function isAdPlaybackPolicyEligible() {
+        if (!enforceAdPlayEligibility) {
+          return true;
+        }
+
+        return isAutoplayPolicyEligible({
+          isMuted: isPlayerMuted(),
+          hasUserActivation: hasUserActivation(),
+        });
+      }
+
+      function isAdDisplayInitDelayElapsed() {
+        if (!adDisplayContainerInitializedAt) {
+          return false;
+        }
+
+        return Date.now() - adDisplayContainerInitializedAt >= adDisplayInitMinDelayMs;
+      }
+
+      function scheduleQueuedRequestRetry() {
+        if (requestAdsRetryTimeoutId || !adDisplayContainerInitializedAt) {
+          return;
+        }
+
+        const elapsedSinceInit = Date.now() - adDisplayContainerInitializedAt;
+        const retryDelayMs = Math.max(adDisplayInitMinDelayMs - elapsedSinceInit, 0);
+
+        requestAdsRetryTimeoutId = window.setTimeout(() => {
+          requestAdsRetryTimeoutId = null;
+          maybeRequestAds();
+        }, retryDelayMs);
+      }
 
       // Creating Video Element Structure + initialize video
       function createVideoElement() {
@@ -289,7 +385,6 @@ const {
           );
           closeBtn = document.querySelector('#close_button_' + iterationId);
           videoPlaceholder = document.querySelector('#stpd-video-placeholder_' + iterationId);
-          videoPlaceholder = document.querySelector('#stpd-video-placeholder_' + iterationId);
           overlayAd = document.querySelector('#overlay_ad_' + iterationId);
           overlayAdInner = document.querySelector(
             '#overlay_ad_' + iterationId + '> .stpd-overlay-ad-inner'
@@ -366,21 +461,32 @@ const {
         }
 
         // Start ads when the video player is clicked, but only the first time it's clicked.
-        var startEvent = 'click';
+        var startEvent = window.PointerEvent ? 'pointerdown' : 'click';
         if (
           navigator.userAgent.match(/iPhone/i) ||
           navigator.userAgent.match(/iPad/i) ||
           navigator.userAgent.match(/Android/i)
         ) {
-          startEvent = 'touchend';
+          startEvent = 'touchstart';
         }
 
+        var adInitTarget =
+          (player && typeof player.el === 'function' && player.el()) ||
+          videoElementContainer ||
+          videoElement;
         var boundInitFromStart = initFromStart.bind(null, player);
-        videoElement.addEventListener(startEvent, boundInitFromStart);
+        adInitTarget.addEventListener(startEvent, boundInitFromStart);
+
+        function removeStartInitListener() {
+          if (adInitTarget && boundInitFromStart) {
+            adInitTarget.removeEventListener(startEvent, boundInitFromStart);
+          }
+        }
 
         options = {
           id: 'video_' + iterationId,
           adTagUrl: adUnit,
+          requestMode: 'manual',
           adsManagerLoadedCallback: adsManagerLoadedCallback.bind(null, player),
         };
 
@@ -401,21 +507,37 @@ const {
 
         player.on('volumechange', syncAdVolume);
         syncAdVolume(player);
-        if (player.ima.controller && player.ima.controller.settings) {
-          player.ima.controller.settings.adsWillPlayMuted = player.muted() || player.volume() === 0;
-        }
+        syncAdsWillPlayMutedSetting();
 
-        function initFromStart(player) {
+        function initFromStart(player, event) {
           if (!initialized) {
+            markUserActivation(event);
             init(player);
-            videoElement.removeEventListener(startEvent, boundInitFromStart);
+            removeStartInitListener();
           }
         }
 
         function init(player) {
           initialized = true;
           player.ima.initializeAdDisplayContainer();
+          adDisplayContainerInitializedAt = Date.now();
+          if (!pendingAdRequest) {
+            queueAdRequest(initialAutoplay);
+          }
           maybeRequestAds();
+        }
+
+        initAdsFromPageInteraction = function (event) {
+          if (initialized) {
+            return;
+          }
+          markUserActivation(event);
+          init(player);
+          removeStartInitListener();
+        };
+
+        if (initialAutoplay && (muted || hasUserActivation())) {
+          initAdsFromPageInteraction();
         }
 
         // Gathering ad events
@@ -567,6 +689,7 @@ const {
         // Playlist: Request ads on video change + force play video with playlistItemClicked
         function onPlaylistItemClick(player, event) {
           if (!adBreakActive) {
+            markUserActivation(event);
             playlistItemClicked = true;
             if (!initialized) {
               init(player);
@@ -574,18 +697,10 @@ const {
 
             player.ima.setContentWithAdTag(null);
 
-            var adTagUrl = options.adTagUrl;
-            if (player.ima.controller && player.ima.controller.settings) {
-              player.ima.controller.settings.adsWillPlayMuted =
-                player.muted() || player.volume() === 0;
-            }
+            syncAdsWillPlayMutedSetting();
 
-            if (!isPlayerViewable()) {
-              queueAdRequest(false);
-              return;
-            }
-
-            player.ima.requestAds();
+            queueAdRequest(false);
+            maybeRequestAds();
           } else {
             if (debug) {
               console.log(containerId + ': Change video: Wait for Ad to finish.');
@@ -614,18 +729,34 @@ const {
       }
 
       function maybeRequestAds() {
-        if (!pendingAdRequest || adBreakActive) {
+        if (!pendingAdRequest) {
           return;
         }
-        if (!initialized || !isPlayerViewable()) {
+
+        const initDelayElapsed = isAdDisplayInitDelayElapsed();
+        const requestAllowed = canRequestAdsNow({
+          pendingAdRequest,
+          adBreakActive,
+          initialized,
+          isPlayerViewable: isPlayerViewable(),
+          initDelayElapsed,
+          playbackPolicyEligible: isAdPlaybackPolicyEligible(),
+        });
+
+        if (!initDelayElapsed && initialized && !adBreakActive) {
+          scheduleQueuedRequestRetry();
+        }
+
+        if (!requestAllowed) {
           return;
         }
+
         if (!player || !player.ima || typeof player.ima.requestAds !== 'function') {
           return;
         }
-        if (player.ima.controller && player.ima.controller.settings) {
-          player.ima.controller.settings.adsWillPlayMuted = player.muted() || player.volume() === 0;
-        }
+
+        syncAdsWillPlayMutedSetting();
+
         player.ima.requestAds();
         pendingAdRequest = false;
         const shouldAutoplay = shouldAutoplayAfterQueuedAd({
@@ -634,11 +765,11 @@ const {
         });
         pendingAdAutoplay = false;
         if (shouldAutoplay) {
-          safePlay(false);
+          safePlay(true, 'queued-ad-request');
         }
       }
 
-      function safePlay(allowRetry) {
+      function safePlay(allowRetry, reason) {
         if (!player || typeof player.play !== 'function') {
           return null;
         }
@@ -646,8 +777,11 @@ const {
         if (playPromise && typeof playPromise.catch === 'function') {
           playPromise.catch((err) => {
             if (err && err.name === 'NotAllowedError') {
-              if (allowRetry) {
+              if (!playerManuallyPaused || allowRetry) {
                 autoplayPending = true;
+              }
+              if (debug && reason) {
+                console.warn(containerId + ': Play blocked by browser policy (' + reason + ')');
               }
               return;
             }
@@ -676,11 +810,17 @@ const {
           return;
         }
         autoplayPending = false;
+
+        if (!isAdPlaybackPolicyEligible()) {
+          autoplayPending = true;
+          return;
+        }
+
         maybeRequestAds();
         if (pendingAdRequest) {
           return;
         }
-        safePlay(true);
+        safePlay(true, 'autoplay-in-view');
       }
 
       // Global: Check if big player has been in view
@@ -740,9 +880,18 @@ const {
         }
       }
 
-      function handleUserActivation() {
+      function handleUserActivation(event) {
+        if (useFallbackActivationTracking && !isFallbackUserActivationEvent(event)) {
+          return;
+        }
+
+        markUserActivation(event);
+        if (typeof initAdsFromPageInteraction === 'function') {
+          initAdsFromPageInteraction(event);
+        }
         unmuteOnClick();
         attemptAutoplayInView();
+        maybeRequestAds();
       }
 
       function syncManualPauseState({ source, playerManual, adManual, clearAdAutoPauseFlags }) {
@@ -878,7 +1027,7 @@ const {
             if (debug) {
               console.log(containerId + ': Playing video player');
             }
-            const playPromise = safePlay(false);
+            const playPromise = safePlay(true, 'visibility-resume');
             if (playPromise && typeof playPromise.then === 'function') {
               playPromise
                 .then(() => {
@@ -906,7 +1055,12 @@ const {
         if (!viewabilityElement || isElementOutOfView(viewabilityElement) || !player.paused()) {
           return;
         }
-        const playPromise = player.play();
+        if (!isAdPlaybackPolicyEligible()) {
+          autoplayPending = true;
+          return;
+        }
+
+        const playPromise = safePlay(true, 'resume-content-after-ad');
         if (playPromise && typeof playPromise.then === 'function') {
           playPromise
             .then(() => {
@@ -1360,24 +1514,20 @@ const {
           player.src(nextVideoSrc);
           player.ima.setContentWithAdTag(null);
 
-          var adTagUrl = options.adTagUrl;
-          if (player.ima.controller && player.ima.controller.settings) {
-            player.ima.controller.settings.adsWillPlayMuted =
-              player.muted() || player.volume() === 0;
-          }
+          syncAdsWillPlayMutedSetting();
 
-          if (!isPlayerViewable()) {
-            queueAdRequest(true);
+          queueAdRequest(true);
+          maybeRequestAds();
+
+          if (pendingAdRequest) {
             videoEnded = false;
             return;
           }
 
-          player.ima.requestAds();
-
           if (debug) {
             console.log(containerId + ': Calling ads. AdUnit url: ' + options.adTagUrl);
           }
-          safePlay(false);
+          safePlay(true, 'playlist-autoplay');
           videoEnded = false;
         } else {
           if (debug) {
@@ -1403,7 +1553,7 @@ const {
                 videoElement.setAttribute('title', nextVideoTitle);
                 videoTitle.innerHTML = nextVideoTitle;
                 player.src(videoSrc);
-                safePlay(false);
+                safePlay(true, 'playlist-click');
                 trackPlaylist(0, clickedIndex);
               }
             });
@@ -1454,7 +1604,9 @@ const {
       document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
       document.addEventListener('mozfullscreenchange', handleFullscreenChange);
       document.addEventListener('MSFullscreenChange', handleFullscreenChange);
-      window.addEventListener('click', handleUserActivation);
+      userActivationEventTypes.forEach((eventType) => {
+        window.addEventListener(eventType, handleUserActivation);
+      });
     };
 
     if (stpdVideo.que.length > 0) {

@@ -6,17 +6,27 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-06-16
+
 ### Added
+- Configurable `adDisplayInitMinDelayMs` option to control minimum delay between ad display container initialization and ad requests.
+- Configurable `enforceAdPlayEligibility` option to require muted playback or user activation before requesting ads.
+- Dedicated user activation utility module and tests, including fallback handling for `keydown`, `mousedown`, `pointerdown`, `pointerup`, and `touchend` when native UserActivation API is unavailable.
 - Configurable `viewabilityThreshold` option (0..1, clamped) for ad/player viewability checks.
 - Ad pause/resume debug trace logs with explicit reason tags.
 - Unit tests for playback visibility helpers and manual pause state transitions.
 - Utility modules for ad playback controls, visibility math, and pause-state synchronization.
 
 ### Changed
+- Switched IMA request flow to manual request mode so ad requests are centrally gated by viewability, page state, initialization state, policy eligibility, and init delay.
+- Refactored activation and ad-request code paths in runtime logic to reduce duplication and keep behavior modular.
+- Updated playback visibility helper tests to cover autoplay policy eligibility and ad-request gate decisions.
 - Visibility gating now considers document visibility and focus in addition to viewport position.
 - Auto-resume and queued autoplay behavior now respects manual pause intent.
 
 ### Fixed
+- Prevented ad requests from firing before playback eligibility is met.
+- Improved autoplay/ad-start consistency after first valid user interaction across desktop and mobile browser policy constraints.
 - Prevented hidden or out-of-focus ad/content playback.
 - Fixed ad auto-resume edge cases around mini-player close/reopen and manual ad pause.
 - Improved consistency of ad volume synchronization with player state.
