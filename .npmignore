@@ -12,3 +12,4 @@ docker-compose.yml
 webpack.config.js
 test
 INTERNAL.md
+AGENTS.md

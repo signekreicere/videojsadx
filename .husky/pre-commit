@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+set -e
+
+staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
+
+npm run precommit
+
+if [ -n "$staged_files" ]; then
+	echo "$staged_files" | while IFS= read -r file; do
+		if [ -n "$file" ]; then
+			git add -- "$file"
+		fi
+	done
+fi
+
+git add -A dist

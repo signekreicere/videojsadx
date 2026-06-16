@@ -12,6 +12,25 @@ import './style.css';
 import 'videojs-contrib-ads';
 import 'videojs-ima';
 import stpdLogoImage from './assets/setupad-short.svg';
+import adPlaybackUtils from './utils/adPlaybackUtils.cjs';
+import domViewability from './utils/domViewability.cjs';
+import manualPauseState from './utils/manualPauseState.cjs';
+import playbackVisibility from './utils/playbackVisibility.cjs';
+
+const { pauseAdPlayback, resumeAdPlayback, syncAdVolume } = adPlaybackUtils;
+const { isElementOutOfView, isElementViewable } = domViewability;
+const { syncManualPauseFlags } = manualPauseState;
+
+const {
+  MIN_VIEWABILITY_THRESHOLD,
+  canAttemptAutoplayInView,
+  isPlaybackAllowed,
+  resolveViewabilityThreshold,
+  shouldAutoplayAfterQueuedAd,
+  shouldPauseForVisibility,
+  shouldResumeAutoPausedAd,
+  shouldResumeAutoPausedPlayer,
+} = playbackVisibility;
 
 (function (window) {
   'use strict';
@@ -30,6 +49,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
       miniPlayerMobile: [],
       adUnit: '',
       overlayAdElement: '',
+      viewabilityThreshold: MIN_VIEWABILITY_THRESHOLD,
       debug: false,
       watermark: true,
     };
@@ -59,6 +79,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
       let playlistAutoplay = config.playlistAutoplay;
       let adUnit = config.adUnit;
       let overlayAdElement = config.overlayAdElement;
+      let viewabilityThreshold = resolveViewabilityThreshold(config.viewabilityThreshold);
       let debug = config.debug;
       let watermark = config.watermark;
       // Defining user configs: mini player
@@ -112,7 +133,9 @@ import stpdLogoImage from './assets/setupad-short.svg';
       let miniPlayerCloseAfterAd = false;
       let adPausedByMiniPlayerClose = false;
       let adPausedByVisibility = false;
+      let adManuallyPaused = false;
       let playerPaused = false;
+      let playerPausedByVisibility = false;
       let playerManuallyPaused = false;
       let unmutedOnce = false;
       let autoplayPending = initialAutoplay;
@@ -377,7 +400,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
         player.ima(options);
 
         player.on('volumechange', syncAdVolume);
-        syncAdVolume();
+        syncAdVolume(player);
         if (player.ima.controller && player.ima.controller.settings) {
           player.ima.controller.settings.adsWillPlayMuted = player.muted() || player.volume() === 0;
         }
@@ -403,6 +426,12 @@ import stpdLogoImage from './assets/setupad-short.svg';
             google.ima.AdEvent &&
             google.ima.AdEvent.Type &&
             google.ima.AdEvent.Type.VOLUME_CHANGED;
+          var resumedType =
+            google &&
+            google.ima &&
+            google.ima.AdEvent &&
+            google.ima.AdEvent.Type &&
+            google.ima.AdEvent.Type.RESUMED;
           var events = [
             google.ima.AdEvent.Type.ALL_ADS_COMPLETED,
             google.ima.AdEvent.Type.CLICK,
@@ -421,12 +450,15 @@ import stpdLogoImage from './assets/setupad-short.svg';
           if (volumeChangedType) {
             events.push(volumeChangedType);
           }
+          if (resumedType) {
+            events.push(resumedType);
+          }
 
           for (var index = 0; index < events.length; index++) {
             player.ima.addEventListener(events[index], onAdEvent.bind(null));
           }
 
-          syncAdVolume();
+          syncAdVolume(player);
 
           if (playlistItemClicked) {
             safePlay(false);
@@ -445,8 +477,48 @@ import stpdLogoImage from './assets/setupad-short.svg';
             google.ima.AdEvent.Type &&
             event.type == google.ima.AdEvent.Type.VOLUME_CHANGED
           ) {
-            syncAdVolume();
+            syncAdVolume(player);
             return;
+          }
+          if (
+            google &&
+            google.ima &&
+            google.ima.AdEvent &&
+            google.ima.AdEvent.Type &&
+            event.type == google.ima.AdEvent.Type.PAUSED
+          ) {
+            const pausedBySystem = adPausedByVisibility || adPausedByMiniPlayerClose;
+            if (!pausedBySystem) {
+              syncManualPauseState({
+                source: 'ad-ui',
+                adManual: true,
+                clearAdAutoPauseFlags: true,
+              });
+              traceAdState('paused', 'manual');
+            } else {
+              const systemPauseReason = adPausedByVisibility
+                ? 'viewability'
+                : adPausedByMiniPlayerClose
+                  ? 'mini-player-close'
+                  : 'system';
+              traceAdState('paused', systemPauseReason);
+            }
+          }
+          if (
+            google &&
+            google.ima &&
+            google.ima.AdEvent &&
+            google.ima.AdEvent.Type &&
+            (event.type == google.ima.AdEvent.Type.RESUMED ||
+              event.type == google.ima.AdEvent.Type.STARTED)
+          ) {
+            traceAdState('resumed', event.type.toLowerCase());
+            syncManualPauseState({
+              source: 'ad-ui',
+              playerManual: false,
+              adManual: false,
+              clearAdAutoPauseFlags: true,
+            });
           }
           if (event.type == google.ima.AdEvent.Type.SKIPPED) {
             if (debug) {
@@ -456,6 +528,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
           }
           if (event.type == google.ima.AdEvent.Type.CONTENT_PAUSE_REQUESTED) {
             adBreakActive = true;
+            syncManualPauseState({ source: 'ima-content-pause-requested', adManual: false });
             miniPlayerClosed = false;
             showMiniPlayer();
             if (overlayAdElement) {
@@ -463,8 +536,11 @@ import stpdLogoImage from './assets/setupad-short.svg';
             }
           } else if (event.type == google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED) {
             adBreakActive = false;
-            adPausedByMiniPlayerClose = false;
-            adPausedByVisibility = false;
+            syncManualPauseState({
+              source: 'ima-content-resume-requested',
+              adManual: false,
+              clearAdAutoPauseFlags: true,
+            });
             if (overlayAdElement) {
               overlayAd.classList.remove('overlay-ad-hidden');
             }
@@ -475,8 +551,11 @@ import stpdLogoImage from './assets/setupad-short.svg';
             }
             resumeContentAfterAd();
           } else if (event.type == google.ima.AdEvent.Type.ALL_ADS_COMPLETED) {
-            adPausedByMiniPlayerClose = false;
-            adPausedByVisibility = false;
+            syncManualPauseState({
+              source: 'ima-all-ads-completed',
+              adManual: false,
+              clearAdAutoPauseFlags: true,
+            });
             autoplayPlaylist(player);
           } else {
             if (debug) {
@@ -501,7 +580,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
                 player.muted() || player.volume() === 0;
             }
 
-            if (!isElementViewable(getViewabilityElement(), 0.5)) {
+            if (!isPlayerViewable()) {
               queueAdRequest(false);
               return;
             }
@@ -515,15 +594,6 @@ import stpdLogoImage from './assets/setupad-short.svg';
         }
       }
 
-      // Global: Check if big player out of view
-      function isElementOutOfView(el) {
-        const rect = el.getBoundingClientRect();
-        return (
-          rect.bottom <= 0 ||
-          rect.top >= (window.innerHeight || document.documentElement.clientHeight)
-        );
-      }
-
       function getViewabilityElement() {
         if (videoElementContainer && videoElementContainer.classList.contains('stpd-video-fixed')) {
           return videoElementContainer;
@@ -531,31 +601,11 @@ import stpdLogoImage from './assets/setupad-short.svg';
         return videoContainer || videoElementContainer;
       }
 
-      function getElementViewRatio(el) {
-        if (!el) {
-          return 0;
-        }
-        const rect = el.getBoundingClientRect();
-        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-        const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
-        if (rect.width <= 0 || rect.height <= 0) {
-          return 0;
-        }
-        const visibleWidth = Math.max(
-          0,
-          Math.min(rect.right, viewportWidth) - Math.max(rect.left, 0)
+      function isPlayerViewable() {
+        return (
+          isPlaybackAllowed(document) &&
+          isElementViewable(getViewabilityElement(), viewabilityThreshold)
         );
-        const visibleHeight = Math.max(
-          0,
-          Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0)
-        );
-        const visibleArea = visibleWidth * visibleHeight;
-        const totalArea = rect.width * rect.height;
-        return totalArea > 0 ? visibleArea / totalArea : 0;
-      }
-
-      function isElementViewable(el, threshold) {
-        return getElementViewRatio(el) >= threshold;
       }
 
       function queueAdRequest(autoplay) {
@@ -567,23 +617,24 @@ import stpdLogoImage from './assets/setupad-short.svg';
         if (!pendingAdRequest || adBreakActive) {
           return;
         }
-        if (!initialized || !isElementViewable(getViewabilityElement(), 0.5)) {
+        if (!initialized || !isPlayerViewable()) {
           return;
         }
         if (!player || !player.ima || typeof player.ima.requestAds !== 'function') {
           return;
         }
         if (player.ima.controller && player.ima.controller.settings) {
-          player.ima.controller.settings.adsWillPlayMuted =
-            player.muted() || player.volume() === 0;
+          player.ima.controller.settings.adsWillPlayMuted = player.muted() || player.volume() === 0;
         }
         player.ima.requestAds();
         pendingAdRequest = false;
-        if (pendingAdAutoplay) {
-          pendingAdAutoplay = false;
+        const shouldAutoplay = shouldAutoplayAfterQueuedAd({
+          pendingAdAutoplay,
+          playerManuallyPaused,
+        });
+        pendingAdAutoplay = false;
+        if (shouldAutoplay) {
           safePlay(false);
-        } else {
-          pendingAdAutoplay = false;
         }
       }
 
@@ -609,11 +660,19 @@ import stpdLogoImage from './assets/setupad-short.svg';
       }
 
       function attemptAutoplayInView() {
-        if (!autoplayPending || !player || typeof player.play !== 'function') {
+        if (!player || typeof player.play !== 'function') {
           return;
         }
         const viewabilityElement = getViewabilityElement();
-        if (!viewabilityElement || isElementOutOfView(viewabilityElement)) {
+        const isOutOfView = !viewabilityElement || isElementOutOfView(viewabilityElement);
+        if (
+          !canAttemptAutoplayInView({
+            autoplayPending,
+            playbackAllowed: isPlaybackAllowed(document),
+            isOutOfView,
+            playerManuallyPaused,
+          })
+        ) {
           return;
         }
         autoplayPending = false;
@@ -623,7 +682,6 @@ import stpdLogoImage from './assets/setupad-short.svg';
         }
         safePlay(true);
       }
-      
 
       // Global: Check if big player has been in view
       function playerBeenInViewCheck(el) {
@@ -655,11 +713,10 @@ import stpdLogoImage from './assets/setupad-short.svg';
               if (debug) {
                 console.log('Player state from click:', player.paused() ? 'paused' : 'playing');
               }
-              if (player.paused()) {
-                playerManuallyPaused = true;
-              } else {
-                playerManuallyPaused = false;
-              }
+              syncManualPauseState({
+                source: 'player-ui',
+                playerManual: player.paused(),
+              });
             }, 500);
           }
           videoElement.addEventListener('click', () => {
@@ -679,7 +736,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
         if (!unmutedOnce && !muted && player.muted()) {
           unmutedOnce = true;
           player.muted(false);
-          syncAdVolume();
+          syncAdVolume(player);
         }
       }
 
@@ -688,26 +745,110 @@ import stpdLogoImage from './assets/setupad-short.svg';
         attemptAutoplayInView();
       }
 
+      function syncManualPauseState({ source, playerManual, adManual, clearAdAutoPauseFlags }) {
+        const nextState = syncManualPauseFlags(
+          {
+            playerManuallyPaused,
+            playerPaused,
+            autoplayPending,
+            miniPlayerClosed,
+            miniPlayerCloseAfterAd,
+            adManuallyPaused,
+            adPausedByVisibility,
+            adPausedByMiniPlayerClose,
+          },
+          {
+            playerManual,
+            adManual,
+            clearAdAutoPauseFlags,
+          }
+        );
+
+        ({
+          playerManuallyPaused,
+          playerPaused,
+          autoplayPending,
+          miniPlayerClosed,
+          miniPlayerCloseAfterAd,
+          adManuallyPaused,
+          adPausedByVisibility,
+          adPausedByMiniPlayerClose,
+        } = nextState);
+
+        if (debug && source) {
+          const playerState =
+            typeof playerManual === 'boolean' ? playerManual : playerManuallyPaused;
+          const adState = typeof adManual === 'boolean' ? adManual : adManuallyPaused;
+          console.log(
+            containerId +
+              ': Pause sync [' +
+              source +
+              '] player=' +
+              String(playerState) +
+              ', ad=' +
+              String(adState)
+          );
+        }
+      }
+
+      function traceAdState(action, reason) {
+        if (!debug) {
+          return;
+        }
+        const reasonText = reason ? ' (' + reason + ')' : '';
+        console.log(containerId + ': Ad ' + action + reasonText);
+      }
+
       // Global: Pause video if player out of view
       function pausePlayer() {
         if (!player || typeof player.pause !== 'function') {
           return;
         }
         attemptAutoplayInView();
-        const isViewable = isElementViewable(getViewabilityElement(), 0.5);
+        const playbackAllowed = isPlaybackAllowed(document);
+        const isViewable = isElementViewable(getViewabilityElement(), viewabilityThreshold);
+        const shouldPauseForViewability = shouldPauseForVisibility({
+          playbackAllowed,
+          isViewable,
+        });
         if (adBreakActive) {
-          if (!isViewable) {
+          if (shouldPauseForViewability) {
             if (!adPausedByVisibility) {
-              pauseAdPlayback();
+              traceAdState('pause-request', 'viewability');
+              pauseAdPlayback(player);
               adPausedByVisibility = true;
             }
-          } else if (adPausedByVisibility) {
-            resumeAdPlayback();
+          } else if (
+            shouldResumeAutoPausedAd({
+              autoPaused: adPausedByVisibility,
+              adManuallyPaused,
+              playerManuallyPaused,
+            })
+          ) {
+            traceAdState('resume-request', 'viewability-return');
+            resumeAdPlayback(player);
+            adPausedByVisibility = false;
+          } else if ((adManuallyPaused || playerManuallyPaused) && adPausedByVisibility) {
+            traceAdState('resume-blocked', 'manual-pause');
             adPausedByVisibility = false;
           }
         }
-        if (isViewable) {
+        if (playbackAllowed && isViewable) {
           maybeRequestAds();
+        }
+        if (!playbackAllowed) {
+          if (!playerPaused && !player.paused()) {
+            if (debug) {
+              console.log(containerId + ': Pausing video player (page not active)');
+            }
+            player.pause();
+            playerPaused = true;
+            playerPausedByVisibility = true;
+          }
+          return;
+        }
+        if (playerPausedByVisibility) {
+          playerPausedByVisibility = false;
         }
         if (
           (isElementOutOfView(videoContainer) &&
@@ -727,7 +868,13 @@ import stpdLogoImage from './assets/setupad-short.svg';
             playerPaused = true;
           }
         } else {
-          if (playerPaused && !adBreakActive) {
+          if (
+            shouldResumeAutoPausedPlayer({
+              playerPaused,
+              adBreakActive,
+              playerManuallyPaused,
+            })
+          ) {
             if (debug) {
               console.log(containerId + ': Playing video player');
             }
@@ -745,43 +892,14 @@ import stpdLogoImage from './assets/setupad-short.svg';
         }
       }
 
-      function pauseAdPlayback() {
-        if (!player || !player.ima) {
-          return;
-        }
-        if (typeof player.ima.pauseAd === 'function') {
-          player.ima.pauseAd();
-          return;
-        }
-        if (typeof player.ima.getAdsManager === 'function') {
-          const adsManager = player.ima.getAdsManager();
-          if (adsManager && typeof adsManager.pause === 'function') {
-            adsManager.pause();
-          }
-        }
-      }
-
-      function resumeAdPlayback() {
-        if (!player || !player.ima) {
-          return;
-        }
-        if (typeof player.ima.resumeAd === 'function') {
-          player.ima.resumeAd();
-          return;
-        }
-        if (typeof player.ima.getAdsManager === 'function') {
-          const adsManager = player.ima.getAdsManager();
-          if (adsManager && typeof adsManager.resume === 'function') {
-            adsManager.resume();
-          }
-        }
-      }
-
       function resumeContentAfterAd() {
         if (!player || typeof player.play !== 'function') {
           return;
         }
         if (!initialAutoplay || playerManuallyPaused || adBreakActive) {
+          return;
+        }
+        if (!isPlaybackAllowed(document)) {
           return;
         }
         const viewabilityElement = getViewabilityElement();
@@ -797,28 +915,6 @@ import stpdLogoImage from './assets/setupad-short.svg';
             .catch(() => {
               playerPaused = true;
             });
-        }
-      }
-
-      function syncAdVolume() {
-        if (
-          !player ||
-          !player.ima ||
-          typeof player.muted !== 'function' ||
-          typeof player.volume !== 'function'
-        ) {
-          return;
-        }
-        const volume = player.volume();
-        const isMuted = player.muted() || volume === 0;
-        if (player.ima.controller && player.ima.controller.settings) {
-          player.ima.controller.settings.adsWillPlayMuted = isMuted;
-        }
-        if (typeof player.ima.getAdsManager === 'function') {
-          const adsManager = player.ima.getAdsManager();
-          if (adsManager && typeof adsManager.setVolume === 'function') {
-            adsManager.setVolume(isMuted ? 0 : volume);
-          }
         }
       }
 
@@ -843,14 +939,17 @@ import stpdLogoImage from './assets/setupad-short.svg';
         if (!player || typeof player.paused !== 'function' || !videoElementContainer) {
           return;
         }
+        const playbackAllowed = isPlaybackAllowed(document);
         let shouldShowMiniPlayer =
-          (playerBeenInView &&
+          (playbackAllowed &&
+            playerBeenInView &&
             ((initialAutoplay && !player.paused()) || !player.paused() || adBreakActive) &&
             ((miniPlayer.length > 0 && !miniPlayerOnlyOnAds) ||
               (miniPlayer.length > 0 && miniPlayerOnlyOnAds && adBreakActive)) &&
             !isMobile &&
             !miniPlayerClosed) ||
-          (((initialAutoplay && !player.paused()) || !player.paused() || adBreakActive) &&
+          (playbackAllowed &&
+            ((initialAutoplay && !player.paused()) || !player.paused() || adBreakActive) &&
             ((miniPlayerMobile.length > 0 && !miniPlayerOnlyOnAdsMobile) ||
               (miniPlayerMobile.length > 0 && miniPlayerOnlyOnAdsMobile && adBreakActive)) &&
             isMobile &&
@@ -876,8 +975,24 @@ import stpdLogoImage from './assets/setupad-short.svg';
           resizeImaToContainer();
         }
 
-        if (adBreakActive && adPausedByMiniPlayerClose && !isElementOutOfView(videoContainer)) {
-          resumeAdPlayback();
+        if (
+          adBreakActive &&
+          shouldResumeAutoPausedAd({
+            autoPaused: adPausedByMiniPlayerClose,
+            adManuallyPaused,
+            playerManuallyPaused,
+          }) &&
+          !isElementOutOfView(videoContainer)
+        ) {
+          traceAdState('resume-request', 'mini-player-return');
+          resumeAdPlayback(player);
+          adPausedByMiniPlayerClose = false;
+        } else if (
+          adBreakActive &&
+          (adManuallyPaused || playerManuallyPaused) &&
+          adPausedByMiniPlayerClose
+        ) {
+          traceAdState('resume-blocked', 'manual-pause');
           adPausedByMiniPlayerClose = false;
         }
       }
@@ -995,8 +1110,19 @@ import stpdLogoImage from './assets/setupad-short.svg';
         closeBtn.classList.add('close-btn-hidden');
         clearMiniPlayerPositioning();
         if (adBreakActive) {
-          pauseAdPlayback();
+          traceAdState('pause-request', 'mini-player-close');
+          pauseAdPlayback(player);
           adPausedByMiniPlayerClose = true;
+          syncManualPauseState({
+            source: 'mini-player-close',
+            playerManual: true,
+            adManual: true,
+          });
+        } else {
+          syncManualPauseState({
+            source: 'mini-player-close',
+            playerManual: true,
+          });
         }
         if (player && typeof player.pause === 'function') {
           player.pause();
@@ -1240,7 +1366,7 @@ import stpdLogoImage from './assets/setupad-short.svg';
               player.muted() || player.volume() === 0;
           }
 
-          if (!isElementViewable(getViewabilityElement(), 0.5)) {
+          if (!isPlayerViewable()) {
             queueAdRequest(true);
             videoEnded = false;
             return;
@@ -1307,6 +1433,21 @@ import stpdLogoImage from './assets/setupad-short.svg';
           playerBeenInViewCheck(videoContainer));
       });
       window.addEventListener('scroll', () => {
+        (showMiniPlayer(), pausePlayer());
+      });
+      window.addEventListener('resize', () => {
+        (showMiniPlayer(), pausePlayer());
+      });
+      document.addEventListener('visibilitychange', () => {
+        (showMiniPlayer(), pausePlayer());
+      });
+      window.addEventListener('focus', () => {
+        (showMiniPlayer(), pausePlayer());
+      });
+      window.addEventListener('blur', () => {
+        (showMiniPlayer(), pausePlayer());
+      });
+      window.addEventListener('pageshow', () => {
         (showMiniPlayer(), pausePlayer());
       });
       document.addEventListener('fullscreenchange', handleFullscreenChange);

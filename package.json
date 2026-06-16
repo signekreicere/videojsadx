@@ -6,8 +6,12 @@
   "scripts": {
     "dev": "webpack --mode development",
     "build": "webpack --mode production",
-    "prepublishOnly": "npm run build",
+    "test": "node --test test/unit/*.test.cjs",
+    "prepublishOnly": "npm run format:check && npm test && npm run build",
     "format": "prettier --write \"src/**/*.{js,css,scss}\" \"test/**/*.{js,css,scss,html}\" \"webpack.config.js\" \"README.md\" \"INTERNAL.md\"",
+    "format:check": "prettier --check \"src/**/*.{js,css,scss}\" \"test/**/*.{js,css,scss,html}\" \"webpack.config.js\" \"README.md\" \"INTERNAL.md\"",
+    "precommit": "npm run format && npm run build && npm test",
+    "prepare": "husky",
     "start": "webpack serve --mode development",
     "start:docker": "docker compose up --build -d && open http://localhost:8080/videojsadx.html",
     "start:container": "webpack serve --mode development --host 0.0.0.0 --port 8080"
@@ -30,6 +34,7 @@
   "files": [
     "dist",
     "src",
+    "CHANGELOG.md",
     "README.md",
     "LICENSE"
   ],
@@ -50,6 +55,7 @@
     "sass-loader": "^16.0.7",
     "sass": "^1.99.0",
     "style-loader": "^4.0.0",
+    "husky": "^9.1.7",
     "prettier": "^3.8.3",
     "webpack": "^5.106.2",
     "webpack-cli": "^7.0.2",
