@@ -650,6 +650,9 @@ const {
           }
           if (event.type == google.ima.AdEvent.Type.CONTENT_PAUSE_REQUESTED) {
             adBreakActive = true;
+            lastImaResizeWidth = 0;
+            lastImaResizeHeight = 0;
+            lastImaResizeViewMode = null;
             syncManualPauseState({ source: 'ima-content-pause-requested', adManual: false });
             miniPlayerClosed = false;
             showMiniPlayer();
@@ -1160,7 +1163,17 @@ const {
         }
       }
 
-      function resizeImaToContainer(viewMode) {
+      // Mini player: Resize the IMA ad to match the container.
+      // Rapid mini-player toggles during fast scrolling can flood the IMA SDK with
+      // resize() calls and break ad rendering (video drops, audio continues), so
+      // calls are coalesced into a single animation frame and skipped when the
+      // resolved dimensions and view mode have not changed.
+      let lastImaResizeWidth = 0;
+      let lastImaResizeHeight = 0;
+      let lastImaResizeViewMode = null;
+      let imaResizeFrameId = null;
+
+      function applyImaResize(viewMode) {
         if (!adBreakActive || !videoElementContainer) {
           return;
         }
@@ -1181,7 +1194,31 @@ const {
           return;
         }
         const resolvedViewMode = viewMode || getImaViewMode() || google.ima.ViewMode.NORMAL;
+        if (
+          width === lastImaResizeWidth &&
+          height === lastImaResizeHeight &&
+          resolvedViewMode === lastImaResizeViewMode
+        ) {
+          return;
+        }
+        lastImaResizeWidth = width;
+        lastImaResizeHeight = height;
+        lastImaResizeViewMode = resolvedViewMode;
         adsManager.resize(width, height, resolvedViewMode);
+      }
+
+      function resizeImaToContainer(viewMode) {
+        if (typeof window.requestAnimationFrame !== 'function') {
+          applyImaResize(viewMode);
+          return;
+        }
+        if (imaResizeFrameId !== null) {
+          window.cancelAnimationFrame(imaResizeFrameId);
+        }
+        imaResizeFrameId = window.requestAnimationFrame(() => {
+          imaResizeFrameId = null;
+          applyImaResize(viewMode);
+        });
       }
 
       function getImaViewMode() {
