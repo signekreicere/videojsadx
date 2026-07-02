@@ -6,6 +6,13 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Fixed
+- Fixed mobile mini-player occasionally rendering off-screen during fast/momentum scrolling while the ad kept playing (audio-only, non-viewable impressions). Removed the conflicting centering `transform` on the mobile fixed mini-player and rebuilt positioning to set explicit, conflict-free style declarations that are fully cleared on each transition.
+- Mini-player no longer tears down or visually "jumps" when the page loses focus (e.g. clicking into DevTools) while staying visible. It now stays anchored through a transient focus/visibility auto-pause and resumes playback automatically when the page is re-entered, provided playback was not manually paused. Focus/visibility pause gating itself is unchanged.
+
+### Changed
+- A closed mini-player now re-enables when the main content player resumes playback, matching the existing behavior for ad playback.
+
 ## [4.1.0] - 2026-06-16
 
 ### Added

@@ -865,6 +865,14 @@ const {
           pauseButton.addEventListener('click', () => {
             playerManualPause();
           });
+          // Re-enable a closed mini-player when content resumes.
+          player.on('play', () => {
+            if (!adBreakActive && miniPlayerClosed) {
+              miniPlayerClosed = false;
+              miniPlayerCloseAfterAd = false;
+              showMiniPlayer();
+            }
+          });
         }
       }
 
@@ -1093,17 +1101,18 @@ const {
         if (!player || typeof player.paused !== 'function' || !videoElementContainer) {
           return;
         }
-        const playbackAllowed = isPlaybackAllowed(document);
+        // Stay anchored through a transient focus/visibility auto-pause so the mini-player
+        // does not tear down on focus loss; a genuine manual pause still hides it.
+        const playerActive =
+          !player.paused() || adBreakActive || playerPausedByVisibility || adPausedByVisibility;
         let shouldShowMiniPlayer =
-          (playbackAllowed &&
-            playerBeenInView &&
-            ((initialAutoplay && !player.paused()) || !player.paused() || adBreakActive) &&
+          (playerBeenInView &&
+            playerActive &&
             ((miniPlayer.length > 0 && !miniPlayerOnlyOnAds) ||
               (miniPlayer.length > 0 && miniPlayerOnlyOnAds && adBreakActive)) &&
             !isMobile &&
             !miniPlayerClosed) ||
-          (playbackAllowed &&
-            ((initialAutoplay && !player.paused()) || !player.paused() || adBreakActive) &&
+          (playerActive &&
             ((miniPlayerMobile.length > 0 && !miniPlayerOnlyOnAdsMobile) ||
               (miniPlayerMobile.length > 0 && miniPlayerOnlyOnAdsMobile && adBreakActive)) &&
             isMobile &&
@@ -1203,57 +1212,46 @@ const {
       }
 
       // Mini player: Set position based on configs
+      function applyMiniPlayerPosition(width, position, spacingX, spacingY) {
+        const style = videoElementContainer.style;
+        // Clear previous positional declarations to avoid conflicting values.
+        ['top', 'bottom', 'left', 'right', 'transform'].forEach((property) => {
+          style.removeProperty(property);
+        });
+        style.setProperty('width', width);
+        style.setProperty('height', 'unset');
+
+        const vertical = position === 'tl' || position === 'tr' ? 'top' : 'bottom';
+        const horizontal = position === 'tl' || position === 'bl' ? 'left' : 'right';
+        style.setProperty(vertical, spacingX);
+        style.setProperty(horizontal, spacingY);
+      }
+
       function miniPlayerPositioning() {
         if (isMobile) {
-          videoElementContainer.style.cssText +=
-            'width: ' + miniPlayerSizeMobile + '; height: unset;';
-          if (miniPlayerPositionMobile == 'tl') {
-            videoElementContainer.style.cssText +=
-              'top: ' + miniPlayerSpacingXMobile + ';' + 'left: ' + miniPlayerSpacingYMobile + ';';
-          } else if (miniPlayerPositionMobile == 'tr') {
-            videoElementContainer.style.cssText +=
-              'top: ' + miniPlayerSpacingXMobile + ';' + 'right: ' + miniPlayerSpacingYMobile + ';';
-          } else if (miniPlayerPositionMobile == 'bl') {
-            videoElementContainer.style.cssText +=
-              'bottom: ' +
-              miniPlayerSpacingXMobile +
-              ';' +
-              'left: ' +
-              miniPlayerSpacingYMobile +
-              ';';
-          } else if (miniPlayerPositionMobile == 'br') {
-            videoElementContainer.style.cssText +=
-              'bottom: ' +
-              miniPlayerSpacingXMobile +
-              ';' +
-              'right: ' +
-              miniPlayerSpacingYMobile +
-              ';';
-          }
+          applyMiniPlayerPosition(
+            miniPlayerSizeMobile,
+            miniPlayerPositionMobile,
+            miniPlayerSpacingXMobile,
+            miniPlayerSpacingYMobile
+          );
         } else {
-          videoElementContainer.style.cssText += 'width: ' + miniPlayerSize + '; height: unset;';
-          if (miniPlayerPosition == 'tl') {
-            videoElementContainer.style.cssText +=
-              'top: ' + miniPlayerSpacingX + ';' + 'left: ' + miniPlayerSpacingY + ';';
-          } else if (miniPlayerPosition == 'tr') {
-            videoElementContainer.style.cssText +=
-              'top: ' + miniPlayerSpacingX + ';' + 'right: ' + miniPlayerSpacingY + ';';
-          } else if (miniPlayerPosition == 'bl') {
-            videoElementContainer.style.cssText +=
-              'bottom: ' + miniPlayerSpacingX + ';' + 'left: ' + miniPlayerSpacingY + ';';
-          } else if (miniPlayerPosition == 'br') {
-            videoElementContainer.style.cssText +=
-              'bottom: ' + miniPlayerSpacingX + ';' + 'right: ' + miniPlayerSpacingY + ';';
-          }
+          applyMiniPlayerPosition(
+            miniPlayerSize,
+            miniPlayerPosition,
+            miniPlayerSpacingX,
+            miniPlayerSpacingY
+          );
         }
       }
 
       // Mini player: Remove - Set position based on configs
       function clearMiniPlayerPositioning() {
-        ['top', 'bottom', 'left', 'right', 'width'].forEach((property) => {
-          videoElementContainer.style.removeProperty(property);
-          videoElementContainer.style.cssText += 'height: 100%;';
+        const style = videoElementContainer.style;
+        ['top', 'bottom', 'left', 'right', 'width', 'transform'].forEach((property) => {
+          style.removeProperty(property);
         });
+        style.setProperty('height', '100%');
       }
 
       // Mini player: Close button

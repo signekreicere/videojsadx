@@ -29,12 +29,6 @@
   position: fixed;
   z-index: 9999;
 }
-@media (max-width: 767px) {
-  .stpd-video-fixed {
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
-}
 
 .stpd-video-placeholder {
   height: 100%;
