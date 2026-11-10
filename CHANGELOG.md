@@ -6,6 +6,8 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [4.2.0] - 2026-11-10
+
 ### Added
 - `stickyOnLoad` option for an always-on sticky player that docks on page load without a scroll trigger. Follows Google sticky player rules: `plcmt=2`, muted start (IMA sends `vpmute` from the actual mute state), and a close button that dismisses the player for the full pageview. While open, other in-view stpdVideo players and `<video>` elements are paused.
 - `stickyOnLoad` option in the tag generator.
@@ -19,6 +21,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ### Changed
 - A closed mini-player now re-enables when the main content player resumes playback, matching the existing behavior for ad playback.
 - Mini-player (and sticky player) width is clamped to a minimum of 256px (256x144 at 16:9) to meet the Google Ad Manager minimum for programmatic video.
+- `vid_d` is now the real duration of the current video (including playlist items) on each ad request instead of a fixed `10000`, and is omitted when unknown. A `vid_d` already present in the ad tag is kept.
 
 ## [4.1.0] - 2026-06-16
 

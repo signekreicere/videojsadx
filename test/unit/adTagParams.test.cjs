@@ -1,7 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { setAdTagParam } = require('../../src/utils/adTagParams.cjs');
+const {
+  removeAdTagParam,
+  setAdTagParam,
+  setAdTagVideoDuration,
+} = require('../../src/utils/adTagParams.cjs');
 
 test('setAdTagParam appends a missing param', () => {
   assert.equal(
@@ -37,4 +41,46 @@ test('setAdTagParam keeps the hash fragment at the end', () => {
     setAdTagParam('https://x.test/ads?iu=1#frag', 'vpmute', '1'),
     'https://x.test/ads?iu=1&vpmute=1#frag'
   );
+});
+
+test('removeAdTagParam removes the param in any position', () => {
+  assert.equal(
+    removeAdTagParam('https://x.test/ads?iu=1&vid_d=5&sz=1', 'vid_d'),
+    'https://x.test/ads?iu=1&sz=1'
+  );
+  assert.equal(
+    removeAdTagParam('https://x.test/ads?vid_d=5&iu=1', 'vid_d'),
+    'https://x.test/ads?iu=1'
+  );
+  assert.equal(
+    removeAdTagParam('https://x.test/ads?iu=1&vid_d=5', 'vid_d'),
+    'https://x.test/ads?iu=1'
+  );
+  assert.equal(removeAdTagParam('https://x.test/ads?vid_d=5', 'vid_d'), 'https://x.test/ads');
+});
+
+test('removeAdTagParam removes duplicates and keeps similar keys', () => {
+  assert.equal(
+    removeAdTagParam('https://x.test/ads?vid_d=1&xvid_d=2&vid_d=3', 'vid_d'),
+    'https://x.test/ads?xvid_d=2'
+  );
+});
+
+test('setAdTagVideoDuration sets rounded seconds for a known duration', () => {
+  assert.equal(
+    setAdTagVideoDuration('https://x.test/ads?iu=1', 227.6),
+    'https://x.test/ads?iu=1&vid_d=228'
+  );
+  assert.equal(
+    setAdTagVideoDuration('https://x.test/ads?iu=1&vid_d=100', 60),
+    'https://x.test/ads?iu=1&vid_d=60'
+  );
+});
+
+test('setAdTagVideoDuration omits vid_d when the duration is unknown', () => {
+  const url = 'https://x.test/ads?iu=1&vid_d=100';
+  assert.equal(setAdTagVideoDuration(url, undefined), 'https://x.test/ads?iu=1');
+  assert.equal(setAdTagVideoDuration(url, Number.NaN), 'https://x.test/ads?iu=1');
+  assert.equal(setAdTagVideoDuration(url, Infinity), 'https://x.test/ads?iu=1');
+  assert.equal(setAdTagVideoDuration(url, 0), 'https://x.test/ads?iu=1');
 });

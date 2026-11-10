@@ -22,7 +22,7 @@ import stickyCoordinator from './utils/stickyCoordinator.cjs';
 import userActivationUtils from './utils/userActivation.cjs';
 
 const { pauseAdPlayback, resumeAdPlayback, syncAdVolume } = adPlaybackUtils;
-const { setAdTagParam } = adTagParams;
+const { setAdTagParam, setAdTagVideoDuration } = adTagParams;
 const { isElementOutOfView, isElementViewable } = domViewability;
 const { syncManualPauseFlags } = manualPauseState;
 const { resolveMinPlayerWidth } = playerDimensions;
@@ -192,6 +192,8 @@ const playerRegistry = createPlayerRegistry();
       let adDisplayContainerInitializedAt = 0;
       let lastUserActivationAt = 0;
       let requestAdsRetryTimeoutId = null;
+      let vidDurationManaged = false;
+      const knownDurations = new Map();
       let initAdsFromPageInteraction = null;
       const activationEnvironment = {
         navigatorObj: typeof navigator !== 'undefined' ? navigator : null,
@@ -252,6 +254,27 @@ const playerRegistry = createPlayerRegistry();
         }
 
         player.ima.controller.settings.adsWillPlayMuted = isPlayerMuted();
+      }
+
+      function toAbsoluteUrl(src) {
+        const anchor = document.createElement('a');
+        anchor.href = src;
+        return anchor.href;
+      }
+
+      function syncAdTagVideoDuration() {
+        if (!vidDurationManaged || !player || !player.ima || !player.ima.controller) {
+          return;
+        }
+        const settings = player.ima.controller.settings;
+        if (!settings || !settings.adTagUrl) {
+          return;
+        }
+        const duration = knownDurations.get(toAbsoluteUrl(videoSrc));
+        settings.adTagUrl = setAdTagVideoDuration(settings.adTagUrl, duration);
+        if (debug) {
+          console.log(containerId + ': vid_d=' + (duration ? Math.round(duration) : 'omitted'));
+        }
       }
 
       function isAdPlaybackPolicyEligible() {
@@ -442,6 +465,9 @@ const playerRegistry = createPlayerRegistry();
           });
 
           player.on('fullscreenchange', handleFullscreenChange);
+          player.on('loadedmetadata', () => {
+            knownDurations.set(player.currentSrc(), player.duration());
+          });
 
           player.src({
             type: 'video/mp4',
@@ -460,9 +486,8 @@ const playerRegistry = createPlayerRegistry();
           } else if (!adUnit.includes('plcmt=')) {
             adUnit += '&plcmt=1';
           }
-          if (!adUnit.includes('vid_d=')) {
-            adUnit += '&vid_d=10000';
-          }
+          // Publisher-provided vid_d is kept; otherwise it is set per request from the real duration.
+          vidDurationManaged = !adUnit.includes('vid_d=');
 
           if (debug) {
             console.log(containerId + ': AdUnit url: ' + adUnit);
@@ -751,6 +776,8 @@ const playerRegistry = createPlayerRegistry();
               init(player);
             }
 
+            // Runs before playlistLinks() swaps the source, so resolve the clicked item here.
+            videoSrc = event.currentTarget.getAttribute('data-video-src');
             player.ima.setContentWithAdTag(null);
 
             syncAdsWillPlayMutedSetting();
@@ -820,6 +847,7 @@ const playerRegistry = createPlayerRegistry();
         }
 
         syncAdsWillPlayMutedSetting();
+        syncAdTagVideoDuration();
 
         player.ima.requestAds();
         pendingAdRequest = false;
@@ -1620,6 +1648,7 @@ const playerRegistry = createPlayerRegistry();
 
         video.addEventListener('loadedmetadata', function () {
           const duration = video.duration;
+          knownDurations.set(video.src, duration);
           video.remove();
 
           var minutes = Math.floor(duration / 60);
@@ -1727,6 +1756,7 @@ const playerRegistry = createPlayerRegistry();
             scrollerThumbnails[playlistProgressIndex].querySelector('.video-title').innerHTML;
           videoElement.setAttribute('poster', nextVideoThumbnail);
           videoElement.setAttribute('title', nextVideoTitle);
+          videoSrc = nextVideoSrc;
           player.src(nextVideoSrc);
           player.ima.setContentWithAdTag(null);
 

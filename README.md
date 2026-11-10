@@ -144,6 +144,7 @@ Parameter description:
   - AdX ad unit.
   - Must use `https://`. The IMA SDK loads ads inside an HTTPS frame, so `http://` ad tags are blocked as mixed content (AdError 1005).
   - `vpmute` is set by the IMA SDK from the actual mute state; a hardcoded value in the tag is overridden.
+  - `vid_d` (video duration) is set on every ad request from the real duration of the current video, including playlist items. It is omitted if the duration is not known yet. A `vid_d` already present in the tag is kept as is.
 - `viewabilityThreshold:`
   - Number from 0 to 1 that controls when the player is treated as viewable.
   - Used for ad request/resume and pause logic.
