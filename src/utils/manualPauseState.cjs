@@ -23,6 +23,7 @@ function syncManualPauseFlags(state, options) {
   if (opts.clearAdAutoPauseFlags) {
     nextState.adPausedByVisibility = false;
     nextState.adPausedByMiniPlayerClose = false;
+    nextState.adPausedBySticky = false;
   }
 
   return nextState;

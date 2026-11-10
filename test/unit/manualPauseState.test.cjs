@@ -13,6 +13,7 @@ function baseState() {
     adManuallyPaused: false,
     adPausedByVisibility: true,
     adPausedByMiniPlayerClose: true,
+    adPausedBySticky: true,
   };
 }
 
@@ -46,4 +47,5 @@ test('clearAdAutoPauseFlags resets ad auto pause tracking', () => {
   assert.equal(next.adManuallyPaused, true);
   assert.equal(next.adPausedByVisibility, false);
   assert.equal(next.adPausedByMiniPlayerClose, false);
+  assert.equal(next.adPausedBySticky, false);
 });

@@ -55,7 +55,7 @@ Call function with your parameters
             { showOnlyOnAds: false, width: '60%', position: 'bl', spacing: ['100px', '50%'] },
           ],
           adUnit:
-            'http://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=xml_vmap1&unviewed_position_start=1&cust_params=sample_ar%3Dpremidpostpod%26deployment%3Dgmf-js&cmsid=496&vid=short_onecue&correlator=',
+            'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=xml_vmap1&unviewed_position_start=1&cust_params=sample_ar%3Dpremidpostpod%26deployment%3Dgmf-js&cmsid=496&vid=short_onecue&correlator=',
           viewabilityThreshold: 0.7,
           overlayAdElement:
             '<' +
@@ -115,6 +115,7 @@ Parameter description:
     - Show mini player only when ad is playing or all the time.
   - `width:`
     - Mini player width (px / % / ect). Height will be adjusted to aspect ratio.
+    - Never renders narrower than 256px (256x144 at 16:9), the Google Ad Manager minimum for programmatic video. Keep `spacing` small enough for a 256px player to fit the viewport.
   - `position:`
     - Values: { tl / tr / bl / br }
   - `spacing:`
@@ -126,12 +127,23 @@ Parameter description:
     - Show mini player only when ad is playing or all the time.
   - `width:`
     - Mini player width (px / % / ect). Height will be adjusted to aspect ratio.
+    - Never renders narrower than 256px (256x144 at 16:9), the Google Ad Manager minimum for programmatic video. Keep `spacing` small enough for a 256px player to fit the viewport.
   - `position:`
     - Values: { tl / tr / bl / br }
   - `spacing:`
     - Values: [ { t / b } px / % / ect , { l / r } px / % / ect ]
+- `stickyOnLoad:`
+  - If `true`, the player is always sticky: docked from page load (no scroll trigger) and never shown inline.
+  - Uses `miniPlayer` (desktop) / `miniPlayerMobile` (mobile) `width`, `position` and `spacing`; `showOnlyOnAds` is ignored. Without a config for the current device, or without `videoSrc`, the player falls back to inline.
+  - Follows Google sticky player rules: ad tag is sent with `plcmt=2` (overrides any `plcmt` in `adUnit`) and playback always starts muted (`muted` is forced to `true`). The IMA SDK sets `vpmute` on each ad request from the actual mute state.
+  - The close button hides the sticky player for the rest of the pageview.
+  - While open, any other in-view stpdVideo player and any other in-view `<video>` element on the page is paused (players inside iframes cannot be controlled).
+  - Ads-only slots must not use this option; use GPT with `plcmt=4` (Standalone) instead.
+  - Default: `false`.
 - `adUnit:`
   - AdX ad unit.
+  - Must use `https://`. The IMA SDK loads ads inside an HTTPS frame, so `http://` ad tags are blocked as mixed content (AdError 1005).
+  - `vpmute` is set by the IMA SDK from the actual mute state; a hardcoded value in the tag is overridden.
 - `viewabilityThreshold:`
   - Number from 0 to 1 that controls when the player is treated as viewable.
   - Used for ad request/resume and pause logic.
@@ -151,4 +163,4 @@ Parameter description:
   - Values { true / false / URL } (Setupad logo enabled by default)
 - `debug:`
   - Can be removed if no debug required.
-  - Includes ad pause/resume trace logs with reason tags (for example: `viewability`, `mini-player-close`, `manual-pause`).
+  - Includes ad pause/resume trace logs with reason tags (for example: `viewability`, `mini-player-close`, `manual-pause`, `sticky-priority`, `sticky-close`).

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>VideoJS ADX - Sticky on load</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://imasdk.googleapis.com/js/sdkloader/ima3_debug.js"></script>
+    <script src="./videojsadx.js"></script>
+  </head>
+  <body>
+    <p>
+      Sticky player (stickyOnLoad) is docked on load. The in-article player and the plain video
+      below must stay paused while they are in view and the sticky player is open.
+    </p>
+    <div class="stpd-video-container" id="sticky-container">
+      <script>
+        window.stpdVideo = window.stpdVideo || { que: [] };
+        window.stpdVideo.que.push(function () {
+          return window.stpdVideo.setConfig(
+            {
+              videoSrc: './media/nasa-earth-orbit.mp4',
+              thumbnailSrc: './media/thumb-1.svg',
+              thumbnailTitle: 'Sticky video',
+              initialAutoplay: true,
+              stickyOnLoad: true,
+              miniPlayer: [{ width: '200px', position: 'br', spacing: ['50px', '20px'] }],
+              miniPlayerMobile: [{ width: '200px', position: 'br', spacing: ['50px', '10px'] }],
+              adUnit:
+                'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=xml_vmap1&unviewed_position_start=1&cust_params=sample_ar%3Dpremidpostpod%26deployment%3Dgmf-js&cmsid=496&vid=short_onecue&correlator=',
+              debug: true,
+            },
+            'sticky-container'
+          );
+        });
+      </script>
+    </div>
+    <h2>In-article stpdVideo player</h2>
+    <div class="stpd-video-container" id="inline-container">
+      <script>
+        window.stpdVideo = window.stpdVideo || { que: [] };
+        window.stpdVideo.que.push(function () {
+          return window.stpdVideo.setConfig(
+            {
+              videoSrc: './media/nasa-earth-orbit.mp4',
+              thumbnailSrc: './media/thumb-2.svg',
+              thumbnailTitle: 'In-article video',
+              initialAutoplay: true,
+              muted: true,
+              miniPlayer: [
+                { showOnlyOnAds: false, width: '400px', position: 'bl', spacing: ['50px', '20px'] },
+              ],
+              adUnit:
+                'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=xml_vmap1&unviewed_position_start=1&cust_params=sample_ar%3Dpremidpostpod%26deployment%3Dgmf-js&cmsid=496&vid=short_onecue&correlator=',
+              debug: true,
+            },
+            'inline-container'
+          );
+        });
+      </script>
+    </div>
+    <h2>Plain &lt;video&gt; element</h2>
+    <video id="foreign-video" src="./media/nasa-earth-orbit.mp4" width="400" controls muted></video>
+    <div style="height: 2000px"></div>
+  </body>
+</html>

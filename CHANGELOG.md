@@ -6,13 +6,19 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Added
+- `stickyOnLoad` option for an always-on sticky player that docks on page load without a scroll trigger. Follows Google sticky player rules: `plcmt=2`, muted start (IMA sends `vpmute` from the actual mute state), and a close button that dismisses the player for the full pageview. While open, other in-view stpdVideo players and `<video>` elements are paused.
+- `stickyOnLoad` option in the tag generator.
+
 ### Fixed
+- Sample ad tags in README and test pages now use `https://`; `http://` tags are blocked by the IMA SDK as mixed content (AdError 1005), so no ads were served.
 - Fixed the IMA ad surface breaking (ad video disappearing while audio kept playing) during fast up/down scrolling on mobile. Rapid mini-player size toggles flooded the IMA SDK with `resize()` calls; ad resizes are now coalesced into a single animation frame and skipped when the resolved dimensions and view mode are unchanged.
 - Fixed mobile mini-player occasionally rendering off-screen during fast/momentum scrolling while the ad kept playing (audio-only, non-viewable impressions). Removed the conflicting centering `transform` on the mobile fixed mini-player and rebuilt positioning to set explicit, conflict-free style declarations that are fully cleared on each transition.
 - Mini-player no longer tears down or visually "jumps" when the page loses focus (e.g. clicking into DevTools) while staying visible. It now stays anchored through a transient focus/visibility auto-pause and resumes playback automatically when the page is re-entered, provided playback was not manually paused. Focus/visibility pause gating itself is unchanged.
 
 ### Changed
 - A closed mini-player now re-enables when the main content player resumes playback, matching the existing behavior for ad playback.
+- Mini-player (and sticky player) width is clamped to a minimum of 256px (256x144 at 16:9) to meet the Google Ad Manager minimum for programmatic video.
 
 ## [4.1.0] - 2026-06-16
 

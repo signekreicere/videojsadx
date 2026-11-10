@@ -259,7 +259,8 @@
                   <h3>Width:</h3>
                   <i class="fas fa-info-circle info-icon"></i>
                   <div class="info-description">
-                    Width of mini player (Height will be adjusted proprotionally).
+                    Width of mini player (Height will be adjusted proprotionally). Minimum 256px is
+                    always enforced.
                   </div>
                   <input
                     type="text"
@@ -344,7 +345,8 @@
                   <h3>Width:</h3>
                   <i class="fas fa-info-circle info-icon"></i>
                   <div class="info-description">
-                    Width of mini player (Height will be adjusted proprotionally).
+                    Width of mini player (Height will be adjusted proprotionally). Minimum 256px is
+                    always enforced.
                   </div>
                   <input
                     type="text"
@@ -404,6 +406,25 @@
 
         <div class="row">
           <div class="col-12">
+            <h2 class="col-12">Sticky player</h2>
+            <div class="col-12 pt-2">
+              <h3>Always sticky (stickyOnLoad):</h3>
+              <i class="fas fa-info-circle info-icon"></i>
+              <div class="info-description">
+                Check to dock the player on page load and never show it inline. Uses the mini player
+                desktop / mobile width, position and spacing (enable them above). Starts muted,
+                sends plcmt=2 and pauses other in-view video players. Close button hides it for the
+                whole pageview. Not for ads-only slots (use GPT plcmt=4).
+              </div>
+              <input type="checkbox" class="form-control generate-code" id="stickyOnLoad" />
+            </div>
+          </div>
+        </div>
+
+        <div class="seperator my-4"></div>
+
+        <div class="row">
+          <div class="col-12">
             <h2 class="col-12">Ads</h2>
 
             <div class="col-12 pt-2">
@@ -414,7 +435,7 @@
                 type="text"
                 class="form-control generate-code"
                 id="adTagUrl"
-                placeholder="http://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/123456789/video_tag_adx"
+                placeholder="https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/123456789/video_tag_adx"
               />
             </div>
 
@@ -588,6 +609,8 @@
         const spacingXMobile = sanitizeInput(document.getElementById('spacingXMobile').value);
         const spacingYMobile = sanitizeInput(document.getElementById('spacingYMobile').value);
 
+        const stickyOnLoad = document.getElementById('stickyOnLoad').checked;
+
         const toggleWatermark = document.getElementById('toggleWatermark').checked;
         const watermarkUrl = sanitizeInput(document.getElementById('watermarkUrl').value);
 
@@ -707,6 +730,12 @@
           generatedCode += `                miniPlayerMobile: [\n`;
           generatedCode += `                    { showOnlyOnAds: ${showOnlyOnAdsMobile}, width: '${widthMobile}', position: '${positionMobile}', spacing: ['${spacingXMobile}', '${spacingYMobile}'] }\n`;
           generatedCode += `                ]`;
+          elementAdded = true;
+        }
+
+        if (stickyOnLoad) {
+          generatedCode += elementAdded ? ',\n' : '\n';
+          generatedCode += `                stickyOnLoad: true`;
           elementAdded = true;
         }
 

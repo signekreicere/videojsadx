@@ -13,14 +13,20 @@ import 'videojs-contrib-ads';
 import 'videojs-ima';
 import stpdLogoImage from './assets/setupad-short.svg';
 import adPlaybackUtils from './utils/adPlaybackUtils.cjs';
+import adTagParams from './utils/adTagParams.cjs';
 import domViewability from './utils/domViewability.cjs';
 import manualPauseState from './utils/manualPauseState.cjs';
 import playbackVisibility from './utils/playbackVisibility.cjs';
+import playerDimensions from './utils/playerDimensions.cjs';
+import stickyCoordinator from './utils/stickyCoordinator.cjs';
 import userActivationUtils from './utils/userActivation.cjs';
 
 const { pauseAdPlayback, resumeAdPlayback, syncAdVolume } = adPlaybackUtils;
+const { setAdTagParam } = adTagParams;
 const { isElementOutOfView, isElementViewable } = domViewability;
 const { syncManualPauseFlags } = manualPauseState;
+const { resolveMinPlayerWidth } = playerDimensions;
+const { createPlayerRegistry, shouldPauseForeignVideo, shouldYieldToSticky } = stickyCoordinator;
 const {
   FALLBACK_USER_ACTIVATION_EVENT_TYPES,
   hasUserActivationState,
@@ -41,6 +47,8 @@ const {
   shouldResumeAutoPausedPlayer,
 } = playbackVisibility;
 
+const playerRegistry = createPlayerRegistry();
+
 (function (window) {
   'use strict';
 
@@ -56,6 +64,7 @@ const {
       playlistAutoplay: false,
       miniPlayer: [],
       miniPlayerMobile: [],
+      stickyOnLoad: false,
       adUnit: '',
       overlayAdElement: '',
       viewabilityThreshold: MIN_VIEWABILITY_THRESHOLD,
@@ -136,6 +145,28 @@ const {
       if (debug) {
         console.log(containerId + ': Window inner width: ' + top.window.innerWidth);
       }
+      let stickyMode = false;
+      if (config.stickyOnLoad) {
+        const deviceMiniPlayer = isMobile ? miniPlayerMobile : miniPlayer;
+        if (!videoSrc) {
+          console.warn(
+            containerId +
+              ': stickyOnLoad requires videoSrc (ads-only slots must use GPT plcmt=4). Falling back to inline player.'
+          );
+        } else if (deviceMiniPlayer.length <= 0) {
+          console.warn(
+            containerId +
+              ': stickyOnLoad requires ' +
+              (isMobile ? 'miniPlayerMobile' : 'miniPlayer') +
+              ' config for position/size. Falling back to inline player.'
+          );
+        } else {
+          stickyMode = true;
+          // Sticky (plcmt=2) units must start muted per Google sticky player rules.
+          muted = true;
+        }
+      }
+      let stickyClosed = false;
       let player;
       let options;
       let adBreakActive = false;
@@ -148,9 +179,11 @@ const {
       let miniPlayerCloseAfterAd = false;
       let adPausedByMiniPlayerClose = false;
       let adPausedByVisibility = false;
+      let adPausedBySticky = false;
       let adManuallyPaused = false;
       let playerPaused = false;
       let playerPausedByVisibility = false;
+      let playerPausedBySticky = false;
       let playerManuallyPaused = false;
       let unmutedOnce = false;
       let autoplayPending = initialAutoplay;
@@ -422,7 +455,9 @@ const {
             adUnit += '&description_url=' + encodedPageUrl;
           }
 
-          if (!adUnit.includes('plcmt=')) {
+          if (stickyMode) {
+            adUnit = setAdTagParam(adUnit, 'plcmt', '2');
+          } else if (!adUnit.includes('plcmt=')) {
             adUnit += '&plcmt=1';
           }
           if (!adUnit.includes('vid_d=')) {
@@ -434,6 +469,21 @@ const {
           }
 
           // Calling function after video player generated
+          if (stickyMode) {
+            // Dock before ad init so viewability gating sees the fixed player.
+            applyStickyDocking();
+            document.addEventListener('play', onDocumentVideoPlay, true);
+          }
+          playerRegistry.register(containerId, {
+            isSticky: stickyMode,
+            onStickyChange: () => {
+              showMiniPlayer();
+              pausePlayer();
+            },
+          });
+          if (stickyMode) {
+            playerRegistry.notifyStickyChange(containerId);
+          }
           initializeAds();
           setPlaceholderHeight();
           if (playlistAutoplay == true) {
@@ -609,7 +659,8 @@ const {
             google.ima.AdEvent.Type &&
             event.type == google.ima.AdEvent.Type.PAUSED
           ) {
-            const pausedBySystem = adPausedByVisibility || adPausedByMiniPlayerClose;
+            const pausedBySystem =
+              adPausedByVisibility || adPausedByMiniPlayerClose || adPausedBySticky;
             if (!pausedBySystem) {
               syncManualPauseState({
                 source: 'ad-ui',
@@ -622,7 +673,9 @@ const {
                 ? 'viewability'
                 : adPausedByMiniPlayerClose
                   ? 'mini-player-close'
-                  : 'system';
+                  : adPausedBySticky
+                    ? 'sticky-priority'
+                    : 'system';
               traceAdState('paused', systemPauseReason);
             }
           }
@@ -726,13 +779,21 @@ const {
         );
       }
 
+      function isYieldingToSticky() {
+        return shouldYieldToSticky({
+          isSticky: stickyMode,
+          stickyActive: playerRegistry.hasActiveSticky(containerId),
+          inView: !isElementOutOfView(getViewabilityElement()),
+        });
+      }
+
       function queueAdRequest(autoplay) {
         pendingAdRequest = true;
         pendingAdAutoplay = Boolean(autoplay);
       }
 
       function maybeRequestAds() {
-        if (!pendingAdRequest) {
+        if (!pendingAdRequest || stickyClosed || isYieldingToSticky()) {
           return;
         }
 
@@ -797,7 +858,7 @@ const {
       }
 
       function attemptAutoplayInView() {
-        if (!player || typeof player.play !== 'function') {
+        if (!player || typeof player.play !== 'function' || stickyClosed || isYieldingToSticky()) {
           return;
         }
         const viewabilityElement = getViewabilityElement();
@@ -853,6 +914,9 @@ const {
         if (videoElement) {
           function playerManualPause() {
             setTimeout(() => {
+              if (playerPausedBySticky) {
+                return;
+              }
               if (debug) {
                 console.log('Player state from click:', player.paused() ? 'paused' : 'playing');
               }
@@ -867,6 +931,12 @@ const {
           });
           pauseButton.addEventListener('click', () => {
             playerManualPause();
+          });
+          // Native listener: contrib-ads redirects the player 'play' event while awaiting a preroll.
+          videoElement.addEventListener('play', () => {
+            if (!adBreakActive && isYieldingToSticky()) {
+              pauseContentForSticky();
+            }
           });
           // Re-enable a closed mini-player when content resumes.
           player.on('play', () => {
@@ -916,6 +986,7 @@ const {
             adManuallyPaused,
             adPausedByVisibility,
             adPausedByMiniPlayerClose,
+            adPausedBySticky,
           },
           {
             playerManual,
@@ -933,6 +1004,7 @@ const {
           adManuallyPaused,
           adPausedByVisibility,
           adPausedByMiniPlayerClose,
+          adPausedBySticky,
         } = nextState);
 
         if (debug && source) {
@@ -959,9 +1031,46 @@ const {
         console.log(containerId + ': Ad ' + action + reasonText);
       }
 
+      function pauseContentForSticky() {
+        if (player.paused()) {
+          return;
+        }
+        if (debug) {
+          console.log(containerId + ': Pausing video player (sticky player priority)');
+        }
+        playerPausedBySticky = true;
+        playerPaused = true;
+        player.pause();
+      }
+
+      // Returns true while this in-article player must stay paused for an open sticky player.
+      function applyStickyYield() {
+        if (isYieldingToSticky()) {
+          if (!adBreakActive) {
+            pauseContentForSticky();
+          } else if (!adPausedBySticky && !adPausedByVisibility && !adManuallyPaused) {
+            traceAdState('pause-request', 'sticky-priority');
+            adPausedBySticky = true;
+            pauseAdPlayback(player);
+          }
+          return true;
+        }
+        if (adPausedBySticky) {
+          // Hand over to the viewability path so resume still honors viewability and manual pause.
+          traceAdState('pause-handoff', 'sticky-released');
+          adPausedBySticky = false;
+          adPausedByVisibility = true;
+        }
+        playerPausedBySticky = false;
+        return false;
+      }
+
       // Global: Pause video if player out of view
       function pausePlayer() {
-        if (!player || typeof player.pause !== 'function') {
+        if (!player || typeof player.pause !== 'function' || stickyClosed) {
+          return;
+        }
+        if (applyStickyYield()) {
           return;
         }
         attemptAutoplayInView();
@@ -1010,16 +1119,11 @@ const {
         if (playerPausedByVisibility) {
           playerPausedByVisibility = false;
         }
-        if (
-          (isElementOutOfView(videoContainer) &&
-            (miniPlayer.length <= 0 || miniPlayerClosed) &&
-            !isMobile &&
-            !playerManuallyPaused) ||
-          (isElementOutOfView(videoContainer) &&
-            (miniPlayerMobile.length <= 0 || miniPlayerClosed) &&
-            isMobile &&
-            !playerManuallyPaused)
-        ) {
+        const miniPlayerUnavailable =
+          (isMobile ? miniPlayerMobile : miniPlayer).length <= 0 ||
+          miniPlayerClosed ||
+          playerRegistry.hasActiveSticky(containerId);
+        if (isElementOutOfView(videoContainer) && miniPlayerUnavailable && !playerManuallyPaused) {
           if (!playerPaused && !player.paused()) {
             if (debug) {
               console.log(containerId + ': Pausing video player');
@@ -1056,7 +1160,13 @@ const {
         if (!player || typeof player.play !== 'function') {
           return;
         }
-        if (!initialAutoplay || playerManuallyPaused || adBreakActive) {
+        if (
+          !initialAutoplay ||
+          playerManuallyPaused ||
+          adBreakActive ||
+          stickyClosed ||
+          isYieldingToSticky()
+        ) {
           return;
         }
         if (!isPlaybackAllowed(document)) {
@@ -1104,22 +1214,30 @@ const {
         if (!player || typeof player.paused !== 'function' || !videoElementContainer) {
           return;
         }
+        if (stickyMode) {
+          if (!stickyClosed) {
+            applyStickyDocking();
+            pauseForeignVideosInView();
+          }
+          return;
+        }
         // Stay anchored through a transient focus/visibility auto-pause so the mini-player
         // does not tear down on focus loss; a genuine manual pause still hides it.
         const playerActive =
           !player.paused() || adBreakActive || playerPausedByVisibility || adPausedByVisibility;
         let shouldShowMiniPlayer =
-          (playerBeenInView &&
+          !playerRegistry.hasActiveSticky(containerId) &&
+          ((playerBeenInView &&
             playerActive &&
             ((miniPlayer.length > 0 && !miniPlayerOnlyOnAds) ||
               (miniPlayer.length > 0 && miniPlayerOnlyOnAds && adBreakActive)) &&
             !isMobile &&
             !miniPlayerClosed) ||
-          (playerActive &&
-            ((miniPlayerMobile.length > 0 && !miniPlayerOnlyOnAdsMobile) ||
-              (miniPlayerMobile.length > 0 && miniPlayerOnlyOnAdsMobile && adBreakActive)) &&
-            isMobile &&
-            !miniPlayerClosed);
+            (playerActive &&
+              ((miniPlayerMobile.length > 0 && !miniPlayerOnlyOnAdsMobile) ||
+                (miniPlayerMobile.length > 0 && miniPlayerOnlyOnAdsMobile && adBreakActive)) &&
+              isMobile &&
+              !miniPlayerClosed));
 
         if (shouldShowMiniPlayer && isElementOutOfView(videoContainer)) {
           videoPlaceholder.classList.remove('d-none');
@@ -1148,7 +1266,8 @@ const {
             adManuallyPaused,
             playerManuallyPaused,
           }) &&
-          !isElementOutOfView(videoContainer)
+          !isElementOutOfView(videoContainer) &&
+          !isYieldingToSticky()
         ) {
           traceAdState('resume-request', 'mini-player-return');
           resumeAdPlayback(player);
@@ -1255,7 +1374,7 @@ const {
         ['top', 'bottom', 'left', 'right', 'transform'].forEach((property) => {
           style.removeProperty(property);
         });
-        style.setProperty('width', width);
+        style.setProperty('width', resolveMinPlayerWidth(width));
         style.setProperty('height', 'unset');
 
         const vertical = position === 'tl' || position === 'tr' ? 'top' : 'bottom';
@@ -1323,7 +1442,69 @@ const {
       // Mini player: Call close mini player fnct on button click.
       function callCloseMiniPlayer() {
         console.log('callCloseMiniPlayer function called');
-        closeBtn.addEventListener('click', closeMiniPlayer);
+        closeBtn.addEventListener('click', stickyMode ? closeStickyPlayer : closeMiniPlayer);
+      }
+
+      // Sticky player: dock immediately, no in-article slot.
+      function applyStickyDocking() {
+        videoContainer.classList.add('stpd-sticky-mode');
+        videoElementContainer.classList.add('stpd-video-fixed');
+        closeBtn.classList.remove('close-btn-hidden');
+        if (overlayAdElement && overlayAd) {
+          overlayAd.classList.add('overlay-ad-hidden');
+        }
+        miniPlayerPositioning();
+        resizeImaToContainer();
+      }
+
+      // Sticky player: close stays in effect for the rest of the pageview.
+      function closeStickyPlayer() {
+        stickyClosed = true;
+        videoContainer.classList.add('stpd-sticky-closed');
+        videoElementContainer.classList.remove('stpd-video-fixed');
+        closeBtn.classList.add('close-btn-hidden');
+        clearMiniPlayerPositioning();
+        if (adBreakActive) {
+          traceAdState('pause-request', 'sticky-close');
+          pauseAdPlayback(player);
+          syncManualPauseState({ source: 'sticky-close', playerManual: true, adManual: true });
+        } else {
+          syncManualPauseState({ source: 'sticky-close', playerManual: true });
+        }
+        if (player && typeof player.pause === 'function') {
+          player.pause();
+        }
+        document.removeEventListener('play', onDocumentVideoPlay, true);
+        playerRegistry.unregister(containerId);
+        playerRegistry.notifyStickyChange(containerId);
+      }
+
+      // Sticky player: pause non-stpd <video> elements in view (iframe players are unreachable).
+      function pauseForeignVideo(video) {
+        if (
+          !shouldPauseForeignVideo({
+            stickyActive: stickyMode && !stickyClosed,
+            insideStpdPlayer: Boolean(video.closest('.stpd-video')),
+            isPlaying: !video.paused && !video.ended,
+            inView: !isElementOutOfView(video),
+          })
+        ) {
+          return;
+        }
+        if (debug) {
+          console.log(containerId + ': Pausing foreign video (sticky player priority)');
+        }
+        video.pause();
+      }
+
+      function onDocumentVideoPlay(event) {
+        if (event.target instanceof HTMLVideoElement) {
+          pauseForeignVideo(event.target);
+        }
+      }
+
+      function pauseForeignVideosInView() {
+        document.querySelectorAll('video').forEach(pauseForeignVideo);
       }
 
       // Global: Remove overlay ad.
@@ -1615,7 +1796,7 @@ const {
           playlistLinks(),
           callCloseMiniPlayer(),
           pausePlayer(),
-          playerBeenInViewCheck(videoContainer));
+          playerBeenInViewCheck(stickyMode ? videoElementContainer : videoContainer));
       });
       window.addEventListener('scroll', () => {
         (showMiniPlayer(), pausePlayer());
