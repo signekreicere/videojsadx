@@ -4,7 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
-## [Unreleased]
+## [4.2.1] - 2026-11-11
+
+### Fixed
+- Players were created twice (duplicate player markup, `player.ima is not a function`) on pages where a site script dispatches an extra `load` event. Each player is now created only once, and a player whose config is pushed after the page has loaded is created immediately.
 
 ## [4.2.0] - 2026-11-10
 

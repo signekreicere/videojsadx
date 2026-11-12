@@ -16,6 +16,7 @@ import adPlaybackUtils from './utils/adPlaybackUtils.cjs';
 import adTagParams from './utils/adTagParams.cjs';
 import domViewability from './utils/domViewability.cjs';
 import manualPauseState from './utils/manualPauseState.cjs';
+import pageLifecycle from './utils/pageLifecycle.cjs';
 import playbackVisibility from './utils/playbackVisibility.cjs';
 import playerDimensions from './utils/playerDimensions.cjs';
 import stickyCoordinator from './utils/stickyCoordinator.cjs';
@@ -25,6 +26,7 @@ const { pauseAdPlayback, resumeAdPlayback, syncAdVolume } = adPlaybackUtils;
 const { setAdTagParam, setAdTagVideoDuration } = adTagParams;
 const { isElementOutOfView, isElementViewable } = domViewability;
 const { syncManualPauseFlags } = manualPauseState;
+const { onPageLoadOnce } = pageLifecycle;
 const { resolveMinPlayerWidth } = playerDimensions;
 const { createPlayerRegistry, shouldPauseForeignVideo, shouldYieldToSticky } = stickyCoordinator;
 const {
@@ -1820,14 +1822,14 @@ const playerRegistry = createPlayerRegistry();
         });
       }
 
-      window.addEventListener('load', () => {
+      onPageLoadOnce(() => {
         (createVideoElement(),
           updateButtonOpacity(scroller),
           playlistLinks(),
           callCloseMiniPlayer(),
           pausePlayer(),
           playerBeenInViewCheck(stickyMode ? videoElementContainer : videoContainer));
-      });
+      }, window);
       window.addEventListener('scroll', () => {
         (showMiniPlayer(), pausePlayer());
       });
