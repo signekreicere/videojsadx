@@ -9,7 +9,7 @@
   </head>
   <body>
     <p>
-      Sticky player (stickyOnLoad) is docked on load. The in-article player and the plain video
+      Sticky player (alwaysSticky) is docked on load. The in-article player and the plain video
       below must stay paused while they are in view and the sticky player is open.
     </p>
     <div class="stpd-video-container" id="sticky-container">
@@ -22,7 +22,7 @@
               thumbnailSrc: './media/thumb-1.svg',
               thumbnailTitle: 'Sticky video',
               initialAutoplay: true,
-              stickyOnLoad: true,
+              alwaysSticky: true,
               miniPlayer: [{ width: '200px', position: 'br', spacing: ['50px', '20px'] }],
               miniPlayerMobile: [{ width: '200px', position: 'br', spacing: ['50px', '10px'] }],
               adUnit:

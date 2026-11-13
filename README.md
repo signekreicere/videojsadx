@@ -133,12 +133,20 @@ Parameter description:
   - `spacing:`
     - Values: [ { t / b } px / % / ect , { l / r } px / % / ect ]
 - `stickyOnLoad:`
-  - If `true`, the player is always sticky: docked from page load (no scroll trigger) and never shown inline.
+  - If `true`, the player starts docked (sticky) on page load without a scroll trigger, unless its inline slot is already in view.
+  - It behaves like the mini player otherwise: it snaps back inline when the inline slot scrolls into view and docks again whenever the slot is out of view, even before playback starts. A manual pause or the close button returns it inline; docking re-enables when playback resumes.
+  - Uses `miniPlayer` (desktop) / `miniPlayerMobile` (mobile) `width`, `position` and `spacing`; `showOnlyOnAds` is ignored. Without a config for the current device, or without `videoSrc`, the player falls back to a normal inline player.
+  - Always autoplays muted (`vpmute=1`) and sends `plcmt=2`. With `muted: false`, sound is turned on after the user's first interaction with the page, and later ad requests are sent with `vpmute=0`.
+  - While docked and playing, other in-view stpdVideo players and `<video>` elements are kept paused. If the user starts another player (or the sticky player is manually paused), the other players are released and the sticky player pauses and returns inline.
+  - Default: `false`.
+- `alwaysSticky:`
+  - If `true`, the player is always sticky: docked from page load and never shown inline (no in-article slot is reserved).
   - Uses `miniPlayer` (desktop) / `miniPlayerMobile` (mobile) `width`, `position` and `spacing`; `showOnlyOnAds` is ignored. Without a config for the current device, or without `videoSrc`, the player falls back to inline.
   - Follows Google sticky player rules: ad tag is sent with `plcmt=2` (overrides any `plcmt` in `adUnit`) and playback always starts muted (`muted` is forced to `true`). The IMA SDK sets `vpmute` on each ad request from the actual mute state.
   - The close button hides the sticky player for the rest of the pageview.
-  - While open, any other in-view stpdVideo player and any other in-view `<video>` element on the page is paused (players inside iframes cannot be controlled).
+  - While playing, any other in-view stpdVideo player and any other in-view `<video>` element on the page is kept paused (players inside iframes cannot be controlled). If the user starts another player, the sticky player is paused instead (as a manual pause); manually pausing the sticky player releases the other players.
   - Ads-only slots must not use this option; use GPT with `plcmt=4` (Standalone) instead.
+  - Takes precedence over `stickyOnLoad` if both are set.
   - Default: `false`.
 - `adUnit:`
   - AdX ad unit.
@@ -158,6 +166,15 @@ Parameter description:
   - If `true`, ads are requested only when playback is currently eligible by browser policy.
   - Eligibility requires either muted playback or prior user activation.
   - Default: `true`.
+- `waitForConsent:`
+  - If `true`, automatic ad requests (autoplay, sticky) wait until the visitor has answered the consent banner of an IAB TCF v2 CMP (`__tcfapi` event status `tcloaded` or `useractioncomplete`), so ads never start behind the banner and are requested with the visitor's consent choice.
+  - Ads are not held when there is no CMP on the page, when the CMP reports that GDPR does not apply (e.g. US traffic), or when the CMP does not respond within 3 seconds.
+  - A click on the player itself always requests ads right away.
+  - Default: `true`.
+- `stickyAdHoldMs:`
+  - Sticky players (`stickyOnLoad`, `alwaysSticky`) hold their first automatic ad request until the visitor interacts with the page (scroll, wheel, click/tap, key press) or until the page has been visible for this many milliseconds, whichever comes first. This keeps quick bounces from producing non-viewable impressions.
+  - `0` disables the hold.
+  - Default: `5000`.
 - `overlayAdElement:`
   - Overlay Ad tag code (with divs and stuff). (!NB <body> code only. If this is not an independent code, all <head> calls need to be added manually)
 - `watermark:`

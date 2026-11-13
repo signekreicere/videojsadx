@@ -407,16 +407,46 @@
         <div class="row">
           <div class="col-12">
             <h2 class="col-12">Sticky player</h2>
-            <div class="col-12 pt-2">
-              <h3>Always sticky (stickyOnLoad):</h3>
-              <i class="fas fa-info-circle info-icon"></i>
-              <div class="info-description">
-                Check to dock the player on page load and never show it inline. Uses the mini player
-                desktop / mobile width, position and spacing (enable them above). Starts muted,
-                sends plcmt=2 and pauses other in-view video players. Close button hides it for the
-                whole pageview. Not for ads-only slots (use GPT plcmt=4).
+            <div class="col-12 pt-2 row">
+              <div class="col-6">
+                <h3>Sticky on load (stickyOnLoad):</h3>
+                <i class="fas fa-info-circle info-icon"></i>
+                <div class="info-description">
+                  Check to dock the player on page load (unless the inline slot is in view). It
+                  snaps back inline when the slot scrolls into view, like the mini player. Uses the
+                  mini player desktop / mobile settings (enable them above). Autoplays muted, sends
+                  plcmt=2 and pauses other in-view players while docked and playing.
+                </div>
+                <input type="checkbox" class="form-control generate-code" id="stickyOnLoad" />
               </div>
-              <input type="checkbox" class="form-control generate-code" id="stickyOnLoad" />
+              <div class="col-6">
+                <h3>Always sticky (alwaysSticky):</h3>
+                <i class="fas fa-info-circle info-icon"></i>
+                <div class="info-description">
+                  Check to dock the player on page load and never show it inline. Uses the mini
+                  player desktop / mobile width, position and spacing (enable them above). Starts
+                  muted, sends plcmt=2 and pauses other in-view video players while playing. Close
+                  button hides it for the whole pageview. Not for ads-only slots (use GPT plcmt=4).
+                </div>
+                <input type="checkbox" class="form-control generate-code" id="alwaysSticky" />
+              </div>
+              <div class="col-6 pt-2">
+                <h3>Sticky ad hold, ms (stickyAdHoldMs):</h3>
+                <i class="fas fa-info-circle info-icon"></i>
+                <div class="info-description">
+                  Sticky players hold their first ad request until the visitor interacts with the
+                  page (scroll, click/tap, key press) or the page has been visible for this many
+                  milliseconds. Leave empty for the default (5000); 0 disables the hold.
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="500"
+                  class="form-control generate-code"
+                  id="stickyAdHoldMs"
+                  placeholder="5000"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -452,6 +482,23 @@
                 id="overlayAdTagCode"
                 oninput="autoExpand(this)"
               ></textarea>
+            </div>
+
+            <div class="col-12 pt-2">
+              <h3>Wait for consent (waitForConsent):</h3>
+              <i class="fas fa-info-circle info-icon"></i>
+              <div class="info-description">
+                Checked by default: automatic ad requests wait until the visitor has answered the
+                TCF consent banner. Not held without a CMP, when GDPR does not apply (e.g. US
+                traffic) or when the CMP does not respond within 3 seconds. Uncheck to request ads
+                without waiting.
+              </div>
+              <input
+                type="checkbox"
+                class="form-control generate-code"
+                id="waitForConsent"
+                checked
+              />
             </div>
           </div>
         </div>
@@ -610,6 +657,10 @@
         const spacingYMobile = sanitizeInput(document.getElementById('spacingYMobile').value);
 
         const stickyOnLoad = document.getElementById('stickyOnLoad').checked;
+        const alwaysSticky = document.getElementById('alwaysSticky').checked;
+        const stickyAdHoldMsValue = document.getElementById('stickyAdHoldMs').value.trim();
+        const stickyAdHoldMs = stickyAdHoldMsValue === '' ? NaN : Number(stickyAdHoldMsValue);
+        const waitForConsent = document.getElementById('waitForConsent').checked;
 
         const toggleWatermark = document.getElementById('toggleWatermark').checked;
         const watermarkUrl = sanitizeInput(document.getElementById('watermarkUrl').value);
@@ -627,7 +678,7 @@
           `<script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></` + `script>\n`;
         generatedCode += `<!-- NB! Check if latest version, might not be updated -->\n`;
         generatedCode +=
-          `<script src="https://cdn.jsdelivr.net/npm/videojsadx@2.1.6/dist/videojsadx.js"></` +
+          `<script src="https://cdn.jsdelivr.net/npm/videojsadx@4.3.0/dist/videojsadx.js"></` +
           `script>\n\n`;
         generatedCode += `<!-- body -->\n`;
         generatedCode += `<div class="stpd-video-container" id="${videoContainerId}">\n`;
@@ -739,6 +790,18 @@
           elementAdded = true;
         }
 
+        if (alwaysSticky) {
+          generatedCode += elementAdded ? ',\n' : '\n';
+          generatedCode += `                alwaysSticky: true`;
+          elementAdded = true;
+        }
+
+        if (Number.isFinite(stickyAdHoldMs) && stickyAdHoldMs >= 0) {
+          generatedCode += elementAdded ? ',\n' : '\n';
+          generatedCode += `                stickyAdHoldMs: ${Math.round(stickyAdHoldMs)}`;
+          elementAdded = true;
+        }
+
         if (adTagUrl) {
           generatedCode += elementAdded ? ',\n' : '\n';
           generatedCode += `                adUnit: '${adTagUrl}'`;
@@ -748,6 +811,12 @@
         if (overlayAdTagCode) {
           generatedCode += elementAdded ? ',\n' : '\n';
           generatedCode += `                overlayAdElement: ${overlayAdTagCode}`;
+          elementAdded = true;
+        }
+
+        if (!waitForConsent) {
+          generatedCode += elementAdded ? ',\n' : '\n';
+          generatedCode += `                waitForConsent: false`;
           elementAdded = true;
         }
 

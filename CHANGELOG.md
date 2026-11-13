@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [Unreleased]
+
+## [4.3.0] - 2026-11-13
+
+### Added
+- `alwaysSticky` option: the always-docked sticky player previously provided by `stickyOnLoad` (never shown inline, close button hides it for the pageview, forced muted, `plcmt=2`, pauses other in-view players). Takes precedence over `stickyOnLoad`.
+- `alwaysSticky`, `stickyAdHoldMs` and `waitForConsent` options in the tag generator.
+- `waitForConsent` option (default `true`): automatic ad requests wait until the visitor has answered the IAB TCF v2 consent banner. Not held when there is no CMP, GDPR does not apply (e.g. US traffic), or the CMP does not respond within 3 seconds; a click on the player requests ads right away.
+- `stickyAdHoldMs` option (default `5000`): sticky players hold their first automatic ad request until the visitor interacts with the page or the page has been visible for this long, to stop quick bounces from producing non-viewable impressions.
+
+### Changed
+- `stickyOnLoad` now means "start sticky on load": the player docks on page load without a scroll trigger (unless its inline slot is in view), snaps back inline when the slot scrolls into view and docks again whenever it is out of view, even before playback starts. It autoplays muted (`vpmute=1`), sends `plcmt=2`, and pauses other in-view players while docked. With `muted: false`, sound turns on after the user's first interaction. The close button behaves like the mini player close.
+- Sticky players (`stickyOnLoad` and `alwaysSticky`) only hold other in-view players paused while the sticky player is playing (or about to autoplay, so players can't start alongside it on page load). Manually pausing the sticky player releases the other players, and a user-started play on another stpdVideo player or `<video>` element now pauses the sticky player (as a manual pause) instead of being blocked.
+- Migration: configs that relied on the 4.2.x always-docked `stickyOnLoad` behaviour should switch to `alwaysSticky: true`.
+
 ## [4.2.1] - 2026-11-11
 
 ### Fixed
